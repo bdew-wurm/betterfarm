@@ -46,10 +46,10 @@ public class AreaActions {
 
     static void initActionLists() {
         cultivateActions = createActionList(i -> new CultivateActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
-        sowActions = createActionList(i -> new SowActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
-        tendActions = createActionList(i -> new TendActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
-        harvestActions = createActionList(i -> new HarvestActionPerformer(i.radius, false, i.level), BetterFarmMod.cultivateLevels);
-        replantActions = createActionList(i -> new HarvestActionPerformer(i.radius, true, i.level), BetterFarmMod.cultivateLevels);
+        sowActions = createActionList(i -> new SowActionPerformer(i.radius, i.level), BetterFarmMod.sowLevels);
+        tendActions = createActionList(i -> new TendActionPerformer(i.radius, i.level), BetterFarmMod.tendLevels);
+        harvestActions = createActionList(i -> new HarvestActionPerformer(i.radius, false, i.level), BetterFarmMod.harvestLevels);
+        replantActions = createActionList(i -> new HarvestActionPerformer(i.radius, true, i.level), BetterFarmMod.replantLevels);
     }
 
     private static void addOrReplaceActions(List<ActionEntry> list, int actionNumber, String name, List<AreaActionPerformer> available) {
