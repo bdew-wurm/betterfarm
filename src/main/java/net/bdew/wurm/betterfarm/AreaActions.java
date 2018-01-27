@@ -1,0 +1,81 @@
+package net.bdew.wurm.betterfarm;
+
+import com.wurmonline.mesh.Tiles;
+import com.wurmonline.server.Server;
+import com.wurmonline.server.behaviours.ActionEntry;
+import com.wurmonline.server.behaviours.Actions;
+import com.wurmonline.server.behaviours.BehaviourDispatcher;
+import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.items.Item;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class AreaActions {
+    static List<AreaActionPerformer> cultivateActions;
+    static List<AreaActionPerformer> sowActions;
+    static List<AreaActionPerformer> tendActions;
+    static List<AreaActionPerformer> harvestActions;
+    static List<AreaActionPerformer> replantActions;
+
+    public static BehaviourDispatcher.RequestParam tileBehaviourHook(BehaviourDispatcher.RequestParam result, Creature performer, long target, boolean onSurface, Item source) {
+        if (!onSurface) return result;
+
+        final int x = Tiles.decodeTileX(target);
+        final int y = Tiles.decodeTileY(target);
+        final int tile = Server.surfaceMesh.getTile(x, y);
+
+        Function<List<AreaActionPerformer>, List<AreaActionPerformer>> filter =
+                l -> l.stream().filter(
+                        a -> a.canStartOnTile(performer, source, x, y, onSurface, tile)
+                ).collect(Collectors.toList());
+
+        addOrReplaceActions(result.getAvailableActions(), Actions.CULTIVATE, "Cultivate", filter.apply(cultivateActions));
+        addOrReplaceActions(result.getAvailableActions(), Actions.SOW, "Sow", filter.apply(sowActions));
+        addOrReplaceActions(result.getAvailableActions(), Actions.FARM, "Farm", filter.apply(tendActions));
+        addOrReplaceActions(result.getAvailableActions(), Actions.HARVEST, "Harvest", filter.apply(harvestActions));
+        addOrReplaceActions(result.getAvailableActions(), 0, "Harvest and replant", filter.apply(replantActions));
+
+        return result;
+    }
+
+    private static List<AreaActionPerformer> createActionList(Function<ActionDef, AreaActionPerformer> costructor, List<ActionDef> defs) {
+        return defs.stream().map(costructor).collect(Collectors.toList());
+    }
+
+    static void initActionLists() {
+        cultivateActions = createActionList(i -> new CultivateActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
+        sowActions = createActionList(i -> new SowActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
+        tendActions = createActionList(i -> new TendActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
+        harvestActions = createActionList(i -> new HarvestActionPerformer(i.radius, false, i.level), BetterFarmMod.cultivateLevels);
+        replantActions = createActionList(i -> new HarvestActionPerformer(i.radius, true, i.level), BetterFarmMod.cultivateLevels);
+    }
+
+    private static void addOrReplaceActions(List<ActionEntry> list, int actionNumber, String name, List<AreaActionPerformer> available) {
+        if (available.isEmpty()) return;
+        if (actionNumber > 0) {
+            int p = 0;
+            for (ActionEntry actionEntry : list) {
+                if (actionEntry.getNumber() == actionNumber) {
+                    ActionEntry old = list.remove(p);
+                    list.add(p++, new ActionEntry((short) (-1 - available.size()), old.getActionString(), ""));
+                    list.add(p++, new ActionEntry(old.getNumber(), "Tile", old.getVerbString()));
+                    for (AreaActionPerformer act : available) {
+                        list.add(p++, new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
+                    }
+                    return;
+                }
+                p++;
+            }
+        }
+        if (available.size() > 1) {
+            list.add(new ActionEntry((short) -available.size(), name, ""));
+            for (AreaActionPerformer act : available) {
+                list.add(new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
+            }
+        } else {
+            list.add(available.get(0).actionEntry);
+        }
+    }
+}
