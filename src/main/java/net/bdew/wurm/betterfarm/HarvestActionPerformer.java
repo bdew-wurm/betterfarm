@@ -27,7 +27,7 @@ public class HarvestActionPerformer extends AreaActionPerformer {
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
-                36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
+                35 /* ACTION_TYPE_MAYBE_USE_ACTIVE_ITEM */
         }), radius, skillLevel, Actions.HARVEST);
         this.replant = replant;
     }
