@@ -3,6 +3,8 @@ package net.bdew.wurm.betterfarm;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.NotFoundException;
+import javassist.expr.ExprEditor;
+import javassist.expr.MethodCall;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -74,6 +76,16 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             classPool.getCtClass("com.wurmonline.server.behaviours.BehaviourDispatcher")
                     .getMethod("requestActionForTiles", "(Lcom/wurmonline/server/creatures/Creature;JZLcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Behaviour;)Lcom/wurmonline/server/behaviours/BehaviourDispatcher$RequestParam;")
                     .insertAfter("return net.bdew.wurm.betterfarm.AreaActions.tileBehaviourHook($_, $1, $2, $3, $4);");
+
+            classPool.getCtClass("com.wurmonline.server.behaviours.TileDirtBehaviour")
+                    .getMethod("action", "(Lcom/wurmonline/server/behaviours/Action;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;IIZIISF)Z")
+                    .instrument(new ExprEditor() {
+                        @Override
+                        public void edit(MethodCall m) throws CannotCompileException {
+                            if (m.getMethodName().equals("destroyItem"))
+                                m.replace("source.setWeight(source.getWeightGrams() - source.getTemplate().getWeightGrams(), true);");
+                        }
+                    });
 
         } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
