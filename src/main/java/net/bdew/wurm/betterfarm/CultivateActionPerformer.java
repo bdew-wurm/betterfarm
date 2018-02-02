@@ -3,7 +3,6 @@ package net.bdew.wurm.betterfarm;
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
-import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Methods;
 import com.wurmonline.server.creatures.Creature;
@@ -14,16 +13,17 @@ import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.zones.NoSuchZoneException;
 import com.wurmonline.server.zones.Zone;
 import com.wurmonline.server.zones.Zones;
+import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 public class CultivateActionPerformer extends AreaActionPerformer {
     public CultivateActionPerformer(int radius, float skillLevel) {
-        super(ActionEntry.createEntry((short) ModActions.getNextActionId(), String.format("Cultivate (%dx%d)", 2 * radius + 1, 2 * radius + 1), "cultivating", new int[]{
+        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Cultivate (%dx%d)", 2 * radius + 1, 2 * radius + 1), "cultivating", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
                 36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }), radius, skillLevel, Actions.CULTIVATE);
+        }).range(4).build(), radius, skillLevel, Actions.CULTIVATE);
     }
 
     private boolean isCultivatable(byte type) {

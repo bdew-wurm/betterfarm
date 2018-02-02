@@ -4,7 +4,6 @@ import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
-import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Crops;
 import com.wurmonline.server.behaviours.Methods;
@@ -15,18 +14,19 @@ import com.wurmonline.server.items.RuneUtilities;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 
 public class TendActionPerformer extends AreaActionPerformer {
     public TendActionPerformer(int radius, float skillLevel) {
-        super(ActionEntry.createEntry((short) ModActions.getNextActionId(), String.format("Farm (%dx%d)", 2 * radius + 1, 2 * radius + 1), "farming", new int[]{
+        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Farm (%dx%d)", 2 * radius + 1, 2 * radius + 1), "farming", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
                 36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }), radius, skillLevel, Actions.FARM);
+        }).range(4).build(), radius, skillLevel, Actions.FARM);
     }
 
     @Override

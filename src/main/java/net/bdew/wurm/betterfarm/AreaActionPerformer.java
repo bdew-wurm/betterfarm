@@ -66,7 +66,7 @@ public abstract class AreaActionPerformer implements ActionPerformer {
         return true;
     }
 
-    protected abstract void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime);
+    protected abstract void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) throws AbortAction;
 
     protected abstract void doAnimation(Creature performer);
 
@@ -108,54 +108,58 @@ public abstract class AreaActionPerformer implements ActionPerformer {
         int totalTiles = (2 * radius + 1) * (2 * radius + 1);
         MeshIO mesh = (onSurface ? Server.surfaceMesh : Server.caveMesh);
 
-        if (counter == 1f) {
-            float baseTime = tileActionTime(performer, source);
+        try {
+            if (counter == 1f) {
+                float baseTime = tileActionTime(performer, source);
 
-            action.setData((long) (baseTime * 1000));
+                action.setData((long) (baseTime * 1000));
 
-            if (!canStartOnTile(performer, source, tilex, tiley, onSurface, tile))
-                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+                if (!canStartOnTile(performer, source, tilex, tiley, onSurface, tile))
+                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
 
-            float totalTime = 0;
-            for (int x = tilex - radius; x <= tilex + radius; x++) {
-                for (int y = tiley - radius; y <= tiley + radius; y++) {
+                float totalTime = 0;
+                for (int x = tilex - radius; x <= tilex + radius; x++) {
+                    for (int y = tiley - radius; y <= tiley + radius; y++) {
+                        int t = mesh.getTile(x, y);
+                        if (canActOnTile(performer, source, x, y, onSurface, t, false)) {
+                            totalTime += baseTime;
+                        } else {
+                            totalTime += 1;
+                        }
+                    }
+                }
+
+                if (totalTime == 0) {
+                    performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s after failing to find any good tiles.", actionEntry.getVerbString()));
+                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+                }
+
+                totalTime = (float) Math.ceil(totalTime);
+
+                action.setTimeLeft((int) totalTime);
+                performer.sendActionControl(actionEntry.getVerbString(), true, (int) totalTime);
+                action.setNextTick(1);
+                updateNextTick(action, performer, source, tilex, tiley, onSurface);
+                performer.getCommunicator().sendNormalServerMessage(String.format("You start %s.", actionEntry.getVerbString()));
+            } else {
+                if (counter >= action.getNextTick()) {
+                    int tickNum = action.getTickCount();
+                    int x = xByTileNum(tickNum, tilex);
+                    int y = yByTileNum(tickNum, tiley);
                     int t = mesh.getTile(x, y);
-                    if (canActOnTile(performer, source, x, y, onSurface, t, false)) {
-                        totalTime += baseTime;
+                    if (canActOnTile(performer, source, x, y, onSurface, t, true))
+                        doActOnTile(performer, source, x, y, onSurface, t, action.getData() * 0.001f);
+                    action.incTickCount();
+                    if (action.getTickCount() >= totalTiles) {
+                        performer.getCommunicator().sendNormalServerMessage(String.format("You finish %s.", actionEntry.getVerbString()));
+                        return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
                     } else {
-                        totalTime += 1;
+                        updateNextTick(action, performer, source, tilex, tiley, onSurface);
                     }
                 }
             }
-
-            if (totalTime == 0) {
-                performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s after failing to find any good tiles.", actionEntry.getVerbString()));
-                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-            }
-
-            totalTime = (float) Math.ceil(totalTime);
-
-            action.setTimeLeft((int) totalTime);
-            performer.sendActionControl(actionEntry.getVerbString(), true, (int) totalTime);
-            action.setNextTick(1);
-            updateNextTick(action, performer, source, tilex, tiley, onSurface);
-            performer.getCommunicator().sendNormalServerMessage(String.format("You start %s.", actionEntry.getVerbString()));
-        } else {
-            if (counter >= action.getNextTick()) {
-                int tickNum = action.getTickCount();
-                int x = xByTileNum(tickNum, tilex);
-                int y = yByTileNum(tickNum, tiley);
-                int t = mesh.getTile(x, y);
-                if (canActOnTile(performer, source, x, y, onSurface, t, true))
-                    doActOnTile(performer, source, x, y, onSurface, t, action.getData() * 0.001f);
-                action.incTickCount();
-                if (action.getTickCount() >= totalTiles) {
-                    performer.getCommunicator().sendNormalServerMessage(String.format("You finish %s.", actionEntry.getVerbString()));
-                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-                } else {
-                    updateNextTick(action, performer, source, tilex, tiley, onSurface);
-                }
-            }
+        } catch (AbortAction ignored) {
+            return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
         }
 
         return propagate(action, ActionPropagation.CONTINUE_ACTION);

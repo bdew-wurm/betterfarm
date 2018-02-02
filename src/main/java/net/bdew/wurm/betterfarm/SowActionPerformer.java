@@ -4,7 +4,6 @@ import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.Servers;
-import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Crops;
 import com.wurmonline.server.behaviours.Terraforming;
@@ -17,6 +16,7 @@ import com.wurmonline.server.zones.CropTilePoller;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
@@ -25,12 +25,12 @@ import java.util.Set;
 
 public class SowActionPerformer extends AreaActionPerformer {
     public SowActionPerformer(int radius, float skillLevel) {
-        super(ActionEntry.createEntry((short) ModActions.getNextActionId(), String.format("Sow (%dx%d)", 2 * radius + 1, 2 * radius + 1), "sowing", new int[]{
+        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Sow (%dx%d)", 2 * radius + 1, 2 * radius + 1), "sowing", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
                 36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }), radius, skillLevel, Actions.SOW);
+        }).range(4).build(), radius, skillLevel, Actions.SOW);
     }
 
 

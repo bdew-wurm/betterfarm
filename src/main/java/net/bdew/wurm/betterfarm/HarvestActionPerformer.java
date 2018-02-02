@@ -5,7 +5,6 @@ import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
-import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Crops;
 import com.wurmonline.server.behaviours.Methods;
@@ -15,6 +14,7 @@ import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.zones.CropTilePoller;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
@@ -23,12 +23,13 @@ public class HarvestActionPerformer extends AreaActionPerformer {
     private final boolean replant;
 
     public HarvestActionPerformer(int radius, boolean replant, float skillLevel) {
-        super(ActionEntry.createEntry((short) ModActions.getNextActionId(), String.format("Harvest%s (%dx%d)", replant ? " and replant" : "", 2 * radius + 1, 2 * radius + 1), "farming", new int[]{
+
+        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Harvest%s (%dx%d)", replant ? " and replant" : "", 2 * radius + 1, 2 * radius + 1), "harvesting", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
                 35 /* ACTION_TYPE_MAYBE_USE_ACTIVE_ITEM */
-        }), radius, skillLevel, Actions.HARVEST);
+        }).range(4).build(), radius, skillLevel, Actions.HARVEST);
         this.replant = replant;
     }
 
@@ -73,13 +74,6 @@ public class HarvestActionPerformer extends AreaActionPerformer {
             return false;
         }
 
-        if (performer.getMovePenalty() >= 20) {
-            if (message)
-                performer.getCommunicator().sendNormalServerMessage(String.format("You skip the %s as you wouldn't be able to carry the harvest.", FieldData.getTypeName(t, data).toLowerCase()));
-            return false;
-        }
-
-
         if (crop <= 3 && (source == null || source.getTemplateId() != ItemList.scythe)) {
             if (message)
                 performer.getCommunicator().sendNormalServerMessage(String.format("You skip the %s as it needs a scythe to harvest.", FieldData.getTypeName(t, data).toLowerCase()));
@@ -91,7 +85,7 @@ public class HarvestActionPerformer extends AreaActionPerformer {
 
 
     @Override
-    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) {
+    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) throws AbortAction {
         int crop = Crops.getCropNumber(Tiles.decodeType(tile), Tiles.decodeData(tile));
         double difficulty = 0;
         int templateId;
@@ -156,6 +150,18 @@ public class HarvestActionPerformer extends AreaActionPerformer {
         final String name = Crops.getCropName(crop);
 
         ql = Math.max(Math.min(ql, 100.0f), 1.0f);
+
+
+        try {
+            int enc = ReflectionUtil.getPrivateField(performer, ReflectionUtil.getField(Creature.class, "encumbered"));
+            if (performer.getCarriedWeight() + quantity * ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams() > enc) {
+                performer.getCommunicator().sendNormalServerMessage("You stop harvesting as carrying more produce would make you encumbered.");
+                throw new AbortAction();
+            }
+        } catch (IllegalAccessException | NoSuchFieldException | NoSuchTemplateException e) {
+            BetterFarmMod.logException("Error checking encumbered", e);
+        }
+
 
         if (replant) {
             if (quantity <= 1) {
