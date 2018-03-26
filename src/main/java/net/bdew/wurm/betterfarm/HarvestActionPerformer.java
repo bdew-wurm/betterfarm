@@ -135,7 +135,7 @@ public class HarvestActionPerformer extends AreaActionPerformer {
         int quantity = (int) (baseYield + bonusYield + BetterFarmMod.extraHarvest);
 
         if (source != null && source.getSpellEffects() != null) {
-            ql *= 1.0f + RuneUtilities.getModifier(source.getSpellEffects().getRuneEffect(), RuneUtilities.ModifierEffect.ENCH_RESGATHERED);
+            ql *= source.getSpellEffects().getRuneEffect(RuneUtilities.ModifierEffect.ENCH_RESGATHERED);
         }
 
         if (quantity == 0)

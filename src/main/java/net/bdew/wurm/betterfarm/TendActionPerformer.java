@@ -121,8 +121,8 @@ public class TendActionPerformer extends AreaActionPerformer {
             ++farmedCount;
             farmedChance = (int) Math.min(farmedChance + power * 2.0 + rarity * 110 + source.getRarity() * 10, 2047.0);
         }
-        if (source.getSpellEffects() != null && source.getSpellEffects().getRuneEffect() != -10L) {
-            final float extraChance = RuneUtilities.getModifier(source.getSpellEffects().getRuneEffect(), RuneUtilities.ModifierEffect.ENCH_FARMYIELD);
+        if (source.getSpellEffects() != null) {
+            final float extraChance = source.getSpellEffects().getRuneEffect(RuneUtilities.ModifierEffect.ENCH_FARMYIELD) - 1F;
             if (extraChance > 0.0f && Server.rand.nextFloat() < extraChance) {
                 performer.getCommunicator().sendNormalServerMessage("The " + source.getName() + " seems to have an extra effect on the field.");
                 farmedChance = Math.min(farmedChance + 100, 2047);
