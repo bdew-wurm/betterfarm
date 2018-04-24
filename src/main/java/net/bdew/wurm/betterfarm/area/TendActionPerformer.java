@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm;
+package net.bdew.wurm.betterfarm.area;
 
 import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
@@ -13,6 +13,7 @@ import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.RuneUtilities;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import net.bdew.wurm.betterfarm.BetterFarmMod;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;

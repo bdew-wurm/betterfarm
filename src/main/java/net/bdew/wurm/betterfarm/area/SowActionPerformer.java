@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm;
+package net.bdew.wurm.betterfarm.area;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
@@ -15,6 +15,7 @@ import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.zones.CropTilePoller;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
+import net.bdew.wurm.betterfarm.BetterFarmMod;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;

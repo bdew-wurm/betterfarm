@@ -2,9 +2,14 @@ package net.bdew.wurm.betterfarm;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
+import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
+import net.bdew.wurm.betterfarm.area.AreaActions;
+import net.bdew.wurm.betterfarm.planter.PlanterHooks;
+import net.bdew.wurm.betterfarm.planter.PlanterRackPickAction;
+import net.bdew.wurm.betterfarm.planter.PlanterRackPlantAction;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -35,11 +40,13 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             logger.log(Level.INFO, msg);
     }
 
-    static List<ActionDef> cultivateLevels;
-    static List<ActionDef> sowLevels;
-    static List<ActionDef> tendLevels;
-    static List<ActionDef> harvestLevels;
-    static List<ActionDef> replantLevels;
+    public static List<ActionDef> cultivateLevels;
+    public static List<ActionDef> sowLevels;
+    public static List<ActionDef> tendLevels;
+    public static List<ActionDef> harvestLevels;
+    public static List<ActionDef> replantLevels;
+    private static float planterPlantSkill, planterPickSkill;
+    private static String addPotables;
 
     private List<ActionDef> parseDef(String str) {
         ArrayList<ActionDef> result = new ArrayList<ActionDef>();
@@ -65,6 +72,9 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         tendLevels = parseDef(properties.getProperty("farm"));
         harvestLevels = parseDef(properties.getProperty("harvest"));
         replantLevels = parseDef(properties.getProperty("replant"));
+        planterPlantSkill = Float.parseFloat(properties.getProperty("planterPlantSkill", "-1"));
+        planterPickSkill = Float.parseFloat(properties.getProperty("planterPickSkill", "-1"));
+        addPotables = properties.getProperty("addPotables", "");
     }
 
     @Override
@@ -75,7 +85,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             ClassPool classPool = HookManager.getInstance().getClassPool();
             classPool.getCtClass("com.wurmonline.server.behaviours.BehaviourDispatcher")
                     .getMethod("requestActionForTiles", "(Lcom/wurmonline/server/creatures/Creature;JZLcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Behaviour;)Lcom/wurmonline/server/behaviours/BehaviourDispatcher$RequestParam;")
-                    .insertAfter("return net.bdew.wurm.betterfarm.AreaActions.tileBehaviourHook($_, $1, $2, $3, $4);");
+                    .insertAfter("return net.bdew.wurm.betterfarm.area.AreaActions.tileBehaviourHook($_, $1, $2, $3, $4);");
 
             classPool.getCtClass("com.wurmonline.server.behaviours.TileDirtBehaviour")
                     .getMethod("action", "(Lcom/wurmonline/server/behaviours/Action;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;IIZIISF)Z")
@@ -86,6 +96,26 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
                                 m.replace("source.setWeight(source.getWeightGrams() - source.getTemplate().getWeightGrams(), true);");
                         }
                     });
+
+            // Fix new plantables
+            CtClass ctPlanterBehaviour = classPool.getCtClass("com.wurmonline.server.behaviours.PlanterBehaviour");
+            ctPlanterBehaviour.getMethod("getBehavioursFor", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;)Ljava/util/List;")
+                    .instrument(new ExprEditor() {
+                        @Override
+                        public void edit(MethodCall m) throws CannotCompileException {
+                            if (m.getMethodName().equals("isRaw"))
+                                m.replace("$_ = $proceed() || net.bdew.wurm.betterfarm.planter.PlanterHooks.isPotable($0.getTemplateId());");
+                        }
+                    });
+            ctPlanterBehaviour.getMethod("action", "(Lcom/wurmonline/server/behaviours/Action;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/items/Item;SF)Z")
+                    .instrument(new ExprEditor() {
+                        @Override
+                        public void edit(MethodCall m) throws CannotCompileException {
+                            if (m.getMethodName().equals("isSpice"))
+                                m.replace("$_ = $proceed() || net.bdew.wurm.betterfarm.planter.PlanterHooks.isPotable($0.getTemplateId());");
+                        }
+                    });
+
 
         } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
@@ -107,6 +137,12 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
 
     @Override
     public void onServerStarted() {
+        if (!addPotables.isEmpty())
+            PlanterHooks.addPotables(addPotables);
         AreaActions.initActionLists();
+        if (planterPlantSkill > 0)
+            ModActions.registerAction(new PlanterRackPlantAction(planterPlantSkill));
+        if (planterPickSkill > 0)
+            ModActions.registerAction(new PlanterRackPickAction(planterPickSkill));
     }
 }

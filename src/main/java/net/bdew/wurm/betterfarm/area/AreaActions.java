@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm;
+package net.bdew.wurm.betterfarm.area;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Server;
@@ -7,6 +7,8 @@ import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
+import net.bdew.wurm.betterfarm.ActionDef;
+import net.bdew.wurm.betterfarm.BetterFarmMod;
 
 import java.util.List;
 import java.util.function.Function;
@@ -44,7 +46,7 @@ public class AreaActions {
         return defs.stream().map(costructor).collect(Collectors.toList());
     }
 
-    static void initActionLists() {
+    public static void initActionLists() {
         cultivateActions = createActionList(i -> new CultivateActionPerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
         sowActions = createActionList(i -> new SowActionPerformer(i.radius, i.level), BetterFarmMod.sowLevels);
         tendActions = createActionList(i -> new TendActionPerformer(i.radius, i.level), BetterFarmMod.tendLevels);
