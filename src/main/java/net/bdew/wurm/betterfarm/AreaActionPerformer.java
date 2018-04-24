@@ -8,6 +8,7 @@ import com.wurmonline.server.behaviours.Action;
 import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.structures.Blocker;
 import com.wurmonline.server.structures.Blocking;
 import com.wurmonline.server.structures.BlockingResult;
 import com.wurmonline.server.villages.Village;
@@ -56,7 +57,7 @@ public abstract class AreaActionPerformer implements ActionPerformer {
             return false;
         }
 
-        final BlockingResult blockers = Blocking.getBlockerBetween(performer, performer.getPosX(), performer.getPosY(), (tilex << 2) + 2, (tiley << 2) + 2, performer.getPositionZ(), Tiles.decodeHeightAsFloat(tile), onSurface, onSurface, false, 5, -1L, performer.getBridgeId(), -10L, false);
+        final BlockingResult blockers = Blocking.getBlockerBetween(performer, performer.getPosX(), performer.getPosY(), (tilex << 2) + 2, (tiley << 2) + 2, performer.getPositionZ(), Tiles.decodeHeightAsFloat(tile), onSurface, onSurface, false, Blocker.TYPE_ALL, -1L, performer.getBridgeId(), -10L, false);
         if (blockers != null && blockers.getFirstBlocker() != null) {
             if (message)
                 performer.getCommunicator().sendNormalServerMessage(String.format("You decide to skip %s the %s since a %s blocks you.", actionEntry.getVerbString(), t.getName().toLowerCase(), blockers.getFirstBlocker().getName().toLowerCase()));
