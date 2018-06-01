@@ -86,6 +86,15 @@ public class HarvestActionPerformer extends AreaActionPerformer {
     }
 
 
+    private Item getExistingProduce(Item container, int template) {
+        for (Item item : container.getAllItems(true)) {
+            if (item.getTemplateId() == template && item.getAuxData() == 0 && item.getRarity() == 0)
+                return item;
+        }
+        return null;
+    }
+
+
     @Override
     protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) throws AbortAction {
         int crop = Crops.getCropNumber(Tiles.decodeType(tile), Tiles.decodeData(tile));
@@ -180,7 +189,7 @@ public class HarvestActionPerformer extends AreaActionPerformer {
         }
 
         if (quantity > 0) {
-            Item existing = performer.getInventory().findItem(templateId, true);
+            Item existing = getExistingProduce(performer.getInventory(), templateId);
             if (existing != null) {
                 int addWeight = quantity * existing.getTemplate().getWeightGrams();
                 int sumWeight = existing.getWeightGrams() + addWeight;

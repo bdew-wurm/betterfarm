@@ -65,7 +65,8 @@ public class SowActionPerformer extends AreaActionPerformer {
     private Item findSeed(Item container, boolean water) {
         for (Item item : container.getAllItems(true)) {
             if (item.isSeed()) {
-                if (item.getWeightGrams() < item.getTemplate().getWeightGrams()) continue;
+                if (item.getWeightGrams() < item.getTemplate().getWeightGrams() || item.getAuxData() != 0 || item.getRarity() > 0)
+                    continue;
                 if ((!water && normalSeeds.contains(item.getTemplateId())) || (water && waterSeeds.contains(item.getTemplateId())))
                     return item;
             } else if (item.isHollow()) {
