@@ -116,6 +116,18 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
                         }
                     });
 
+            ExprEditor nameFixer = new ExprEditor() {
+                @Override
+                public void edit(MethodCall m) throws CannotCompileException {
+                    if (m.getMethodName().equals("getActualName")) {
+                        m.replace("$_=$proceed(); if ($_.startsWith(\"pile of \")) $_=$_.replace(\"pile of \", \"\");");
+                    }
+                }
+            };
+
+            CtClass ctItem = classPool.getCtClass("com.wurmonline.server.items.Item");
+            ctItem.getMethod("AddBulkItemToCrate", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;)Z").instrument(nameFixer);
+            ctItem.getMethod("AddBulkItem", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;)Z").instrument(nameFixer);
 
         } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
