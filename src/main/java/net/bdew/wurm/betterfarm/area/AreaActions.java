@@ -10,6 +10,7 @@ import com.wurmonline.server.items.Item;
 import net.bdew.wurm.betterfarm.ActionDef;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,8 +22,28 @@ public class AreaActions {
     static List<AreaActionPerformer> harvestActions;
     static List<AreaActionPerformer> replantActions;
 
+    static class SpecialRequestParam extends BehaviourDispatcher.RequestParam {
+        private final List<ActionEntry> originalActions, filteredActions;
+
+        public SpecialRequestParam(List<ActionEntry> actions, String help, List<ActionEntry> originalActions) {
+            super(actions, help);
+            this.filteredActions = actions;
+            this.originalActions = originalActions;
+        }
+
+        @Override
+        public void filterForSelectBar() {
+            filteredActions.clear();
+            filteredActions.addAll(originalActions);
+            super.filterForSelectBar();
+        }
+    }
+
     public static BehaviourDispatcher.RequestParam tileBehaviourHook(BehaviourDispatcher.RequestParam result, Creature performer, long target, boolean onSurface, Item source) {
         if (!onSurface) return result;
+
+        List<ActionEntry> actions = result.getAvailableActions();
+        List<ActionEntry> origActions = new ArrayList<>(actions);
 
         final int x = Tiles.decodeTileX(target);
         final int y = Tiles.decodeTileY(target);
@@ -33,13 +54,13 @@ public class AreaActions {
                         a -> a.canStartOnTile(performer, source, x, y, onSurface, tile)
                 ).collect(Collectors.toList());
 
-        addOrReplaceActions(result.getAvailableActions(), Actions.CULTIVATE, "Cultivate", filter.apply(cultivateActions));
-        addOrReplaceActions(result.getAvailableActions(), Actions.SOW, "Sow", filter.apply(sowActions));
-        addOrReplaceActions(result.getAvailableActions(), Actions.FARM, "Farm", filter.apply(tendActions));
-        addOrReplaceActions(result.getAvailableActions(), Actions.HARVEST, "Harvest", filter.apply(harvestActions));
-        addOrReplaceActions(result.getAvailableActions(), 0, "Harvest and replant", filter.apply(replantActions));
+        addOrReplaceActions(actions, Actions.CULTIVATE, "Cultivate", filter.apply(cultivateActions));
+        addOrReplaceActions(actions, Actions.SOW, "Sow", filter.apply(sowActions));
+        addOrReplaceActions(actions, Actions.FARM, "Farm", filter.apply(tendActions));
+        addOrReplaceActions(actions, Actions.HARVEST, "Harvest", filter.apply(harvestActions));
+        addOrReplaceActions(actions, 0, "Harvest and replant", filter.apply(replantActions));
 
-        return result;
+        return new SpecialRequestParam(result.getAvailableActions(), result.getHelpString(), origActions);
     }
 
     private static List<AreaActionPerformer> createActionList(Function<ActionDef, AreaActionPerformer> costructor, List<ActionDef> defs) {
