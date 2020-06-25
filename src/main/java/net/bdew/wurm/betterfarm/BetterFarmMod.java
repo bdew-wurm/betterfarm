@@ -170,5 +170,6 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             ModActions.registerAction(new PlanterRackPlantAction(planterPlantSkill));
         if (planterPickSkill > 0)
             ModActions.registerAction(new PlanterRackPickAction(planterPickSkill));
+        TrellisHandler.register();
     }
 }
