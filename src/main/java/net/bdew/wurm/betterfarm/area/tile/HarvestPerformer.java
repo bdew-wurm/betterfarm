@@ -1,8 +1,7 @@
-package net.bdew.wurm.betterfarm.area;
+package net.bdew.wurm.betterfarm.area.tile;
 
 import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
-import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.behaviours.Actions;
@@ -15,16 +14,18 @@ import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.zones.CropTilePoller;
 import net.bdew.wurm.betterfarm.AbortAction;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
+import net.bdew.wurm.betterfarm.Utils;
+import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class HarvestActionPerformer extends AreaActionPerformer {
+public class HarvestPerformer extends TileAreaActionPerformer {
     private final boolean replant;
 
-    public HarvestActionPerformer(int radius, boolean replant, float skillLevel) {
+    public HarvestPerformer(int radius, boolean replant, float skillLevel) {
 
         super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Harvest%s (%dx%d)", replant ? " and replant" : "", 2 * radius + 1, 2 * radius + 1), "harvesting", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
@@ -84,16 +85,6 @@ public class HarvestActionPerformer extends AreaActionPerformer {
 
         return super.canActOnTile(performer, source, tilex, tiley, onSurface, tile, message);
     }
-
-
-    private Item getExistingProduce(Item container, int template) {
-        for (Item item : container.getAllItems(true)) {
-            if (item.getTemplateId() == template && item.getAuxData() == 0 && item.getRarity() == 0)
-                return item;
-        }
-        return null;
-    }
-
 
     @Override
     protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) throws AbortAction {
@@ -162,7 +153,6 @@ public class HarvestActionPerformer extends AreaActionPerformer {
 
         ql = Math.max(Math.min(ql, 100.0f), 1.0f);
 
-
         try {
             int enc = ReflectionUtil.getPrivateField(performer, ReflectionUtil.getField(Creature.class, "encumbered"));
             if (performer.getCarriedWeight() + quantity * ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams() > enc) {
@@ -172,7 +162,6 @@ public class HarvestActionPerformer extends AreaActionPerformer {
         } catch (IllegalAccessException | NoSuchFieldException | NoSuchTemplateException e) {
             BetterFarmMod.logException("Error checking encumbered", e);
         }
-
 
         if (replant) {
             if (quantity <= 1) {
@@ -188,31 +177,8 @@ public class HarvestActionPerformer extends AreaActionPerformer {
             Server.getInstance().broadCastAction(performer.getName() + " has harvested the field.", performer, 5);
         }
 
-        if (quantity > 0) {
-            Item existing = getExistingProduce(performer.getInventory(), templateId);
-            if (existing != null) {
-                int addWeight = quantity * existing.getTemplate().getWeightGrams();
-                int sumWeight = existing.getWeightGrams() + addWeight;
-                float sumQl = (existing.getQualityLevel() * existing.getWeightGrams() / sumWeight) + (ql * addWeight / sumWeight);
-                existing.setWeight(sumWeight, false);
-                existing.setQualityLevel(sumQl);
-                if (!existing.getName().contains("pile of"))
-                    existing.setName("pile of " + name);
-                existing.sendUpdate();
-            } else {
-                final Item result;
-                try {
-                    result = ItemFactory.createItem(templateId, ql, null);
-                    if (quantity > 1) {
-                        result.setWeight(result.getTemplate().getWeightGrams() * quantity, false);
-                        result.setName("pile of " + name);
-                    }
-                    performer.getInventory().insertItem(result, true, false);
-                } catch (FailedException | NoSuchTemplateException e) {
-                    BetterFarmMod.logException("Error creating harvest product", e);
-                }
-            }
-        }
+        if (quantity > 0)
+            Utils.addStackedItems(performer.getInventory(), templateId, ql, quantity, name);
 
         if (replant) {
             Server.setSurfaceTile(tilex, tiley, Tiles.decodeHeight(tile), Crops.getTileType(crop), Crops.encodeFieldData(true, 0, crop));

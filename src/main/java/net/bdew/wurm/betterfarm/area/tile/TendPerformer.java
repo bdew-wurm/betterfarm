@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area;
+package net.bdew.wurm.betterfarm.area.tile;
 
 import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
@@ -14,14 +14,15 @@ import com.wurmonline.server.items.RuneUtilities;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
+import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class TendActionPerformer extends AreaActionPerformer {
-    public TendActionPerformer(int radius, float skillLevel) {
+public class TendPerformer extends TileAreaActionPerformer {
+    public TendPerformer(int radius, float skillLevel) {
         super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Farm (%dx%d)", 2 * radius + 1, 2 * radius + 1), "farming", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,

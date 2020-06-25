@@ -6,10 +6,12 @@ import javassist.CtClass;
 import javassist.NotFoundException;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
+import net.bdew.wurm.betterfarm.api.BetterFarmAPI;
 import net.bdew.wurm.betterfarm.area.AreaActions;
 import net.bdew.wurm.betterfarm.planter.PlanterHooks;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPickAction;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPlantAction;
+import net.bdew.wurm.betterfarm.trellis.TrellisHandler;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -45,8 +47,13 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
     public static List<ActionDef> tendLevels;
     public static List<ActionDef> harvestLevels;
     public static List<ActionDef> replantLevels;
+    public static List<ActionDef> pickLevels;
+    public static List<ActionDef> pruneLevels;
+
     private static float planterPlantSkill, planterPickSkill;
     private static String addPotables;
+
+    public static ApiImplementation apiHandler;
 
     private List<ActionDef> parseDef(String str) {
         ArrayList<ActionDef> result = new ArrayList<ActionDef>();
@@ -72,6 +79,8 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         tendLevels = parseDef(properties.getProperty("farm"));
         harvestLevels = parseDef(properties.getProperty("harvest"));
         replantLevels = parseDef(properties.getProperty("replant"));
+        pickLevels = parseDef(properties.getProperty("pick"));
+        pruneLevels = parseDef(properties.getProperty("prune"));
         planterPlantSkill = Float.parseFloat(properties.getProperty("planterPlantSkill", "-1"));
         planterPickSkill = Float.parseFloat(properties.getProperty("planterPickSkill", "-1"));
         addPotables = properties.getProperty("addPotables", "");
@@ -82,10 +91,15 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         try {
             ModActions.init();
 
+            BetterFarmAPI.INSTANCE = apiHandler = new ApiImplementation();
+
             ClassPool classPool = HookManager.getInstance().getClassPool();
-            classPool.getCtClass("com.wurmonline.server.behaviours.BehaviourDispatcher")
-                    .getMethod("requestActionForTiles", "(Lcom/wurmonline/server/creatures/Creature;JZLcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Behaviour;)Lcom/wurmonline/server/behaviours/BehaviourDispatcher$RequestParam;")
+            CtClass ctBehaviourDispatcher = classPool.getCtClass("com.wurmonline.server.behaviours.BehaviourDispatcher");
+            ctBehaviourDispatcher.getMethod("requestActionForTiles", "(Lcom/wurmonline/server/creatures/Creature;JZLcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Behaviour;)Lcom/wurmonline/server/behaviours/BehaviourDispatcher$RequestParam;")
                     .insertAfter("return net.bdew.wurm.betterfarm.area.AreaActions.tileBehaviourHook($_, $1, $2, $3, $4);");
+
+            ctBehaviourDispatcher.getMethod("requestActionForItemsBodyIdsCoinIds", "(Lcom/wurmonline/server/creatures/Creature;JLcom/wurmonline/server/items/Item;Lcom/wurmonline/server/behaviours/Behaviour;)Lcom/wurmonline/server/behaviours/BehaviourDispatcher$RequestParam;")
+                    .insertAfter("return net.bdew.wurm.betterfarm.area.AreaActions.itemBehaviourHook($_, $1, $2, $3);");
 
             classPool.getCtClass("com.wurmonline.server.behaviours.TileDirtBehaviour")
                     .getMethod("action", "(Lcom/wurmonline/server/behaviours/Action;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;IIZIISF)Z")

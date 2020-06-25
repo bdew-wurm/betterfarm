@@ -15,28 +15,14 @@ import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.AbortAction;
-import org.gotti.wurmunlimited.modsupport.actions.ActionPerformer;
 import org.gotti.wurmunlimited.modsupport.actions.ActionPropagation;
-import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
-public abstract class AreaActionPerformer implements ActionPerformer {
-    protected final int radius;
-    protected final ActionEntry actionEntry;
-    protected final float skillLevel;
+public abstract class TileAreaActionPerformer extends BaseAreaActionPerformer {
     protected final short checkAction;
 
-    public AreaActionPerformer(ActionEntry actionEntry, int radius, float skillLevel, short checkAction) {
-        this.actionEntry = actionEntry;
-        this.radius = radius;
-        this.skillLevel = skillLevel;
+    public TileAreaActionPerformer(ActionEntry actionEntry, int radius, float skillLevel, short checkAction) {
+        super(actionEntry, radius, skillLevel);
         this.checkAction = checkAction;
-        ModActions.registerAction(actionEntry);
-        ModActions.registerActionPerformer(this);
-    }
-
-    @Override
-    public short getActionId() {
-        return actionEntry.getNumber();
     }
 
     protected abstract boolean canStartOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile);

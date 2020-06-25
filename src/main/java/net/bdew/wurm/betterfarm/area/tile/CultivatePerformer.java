@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area;
+package net.bdew.wurm.betterfarm.area.tile;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
@@ -14,11 +14,12 @@ import com.wurmonline.server.zones.NoSuchZoneException;
 import com.wurmonline.server.zones.Zone;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
+import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
-public class CultivateActionPerformer extends AreaActionPerformer {
-    public CultivateActionPerformer(int radius, float skillLevel) {
+public class CultivatePerformer extends TileAreaActionPerformer {
+    public CultivatePerformer(int radius, float skillLevel) {
         super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Cultivate (%dx%d)", 2 * radius + 1, 2 * radius + 1), "cultivating", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,

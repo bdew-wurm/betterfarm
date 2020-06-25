@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area;
+package net.bdew.wurm.betterfarm.area.tile;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
@@ -16,6 +16,7 @@ import com.wurmonline.server.zones.CropTilePoller;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
+import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -24,8 +25,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SowActionPerformer extends AreaActionPerformer {
-    public SowActionPerformer(int radius, float skillLevel) {
+public class SowPerformer extends TileAreaActionPerformer {
+    public SowPerformer(int radius, float skillLevel) {
         super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Sow (%dx%d)", 2 * radius + 1, 2 * radius + 1), "sowing", new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
