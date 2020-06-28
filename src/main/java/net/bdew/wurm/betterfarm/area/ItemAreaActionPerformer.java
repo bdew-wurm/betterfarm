@@ -7,7 +7,8 @@ import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
-import net.bdew.wurm.betterfarm.api.ItemAreaHandler;
+import net.bdew.wurm.betterfarm.api.IItemAction;
+import net.bdew.wurm.betterfarm.api.IItemAreaActions;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ActionPropagation;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -18,14 +19,14 @@ import java.util.WeakHashMap;
 
 public class ItemAreaActionPerformer extends BaseAreaActionPerformer {
     private final AreaActionType type;
-    private final WeakHashMap<Action, ActionInfo> actions = new WeakHashMap<>();
+    private final WeakHashMap<Action, ActionInfo> actionData = new WeakHashMap<>();
 
-    private class ActionInfo {
-        private final ItemAreaHandler handler;
+    private static class ActionInfo {
+        private final IItemAction handler;
         private final Iterator<Item> targets;
         private Item current = null;
 
-        public ActionInfo(ItemAreaHandler handler, Iterator<Item> targets) {
+        public ActionInfo(IItemAction handler, Iterator<Item> targets) {
             this.handler = handler;
             this.targets = targets;
         }
@@ -48,14 +49,18 @@ public class ItemAreaActionPerformer extends BaseAreaActionPerformer {
 
     @Override
     public boolean action(Action action, Creature performer, Item source, Item target, short num, float counter) {
-        ActionInfo data = actions.get(action);
+        ActionInfo data = actionData.get(action);
 
         if (data == null) {
-            ItemAreaHandler handler = BetterFarmMod.apiHandler.findHandler(target);
+            IItemAreaActions actions = BetterFarmMod.apiHandler.findHandler(target);
+            if (actions == null)
+                return propagate(action, ActionPropagation.SERVER_PROPAGATION, ActionPropagation.ACTION_PERFORMER_PROPAGATION);
+
+            IItemAction handler = actions.getActions().get(type);
             if (handler == null)
                 return propagate(action, ActionPropagation.SERVER_PROPAGATION, ActionPropagation.ACTION_PERFORMER_PROPAGATION);
 
-            if (!handler.checkSkill(performer, type, skillLevel) || !handler.canStartOn(performer, type, source, target))
+            if (!handler.checkSkill(performer, skillLevel) || !handler.canStartOn(performer, source, target))
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
 
             LinkedList<Item> items = new LinkedList<>();
@@ -69,9 +74,9 @@ public class ItemAreaActionPerformer extends BaseAreaActionPerformer {
                     VolaTile tile = Zones.getTileOrNull(x, y, target.isOnSurface());
                     if (tile == null) continue;
                     for (Item item : tile.getItems()) {
-                        if (handler.canActOn(performer, type, source, item, true)) {
+                        if (handler.canActOn(performer, source, item, true)) {
                             items.add(item);
-                            totalTime += handler.getActionTime(performer, type, source, item);
+                            totalTime += handler.getActionTime(performer, source, item);
                         }
                     }
                 }
@@ -86,26 +91,26 @@ public class ItemAreaActionPerformer extends BaseAreaActionPerformer {
             performer.sendActionControl(type.verb, true, (int) totalTime);
             action.setNextTick(1);
 
-            actions.put(action, data = new ActionInfo(handler, items.iterator()));
+            this.actionData.put(action, data = new ActionInfo(handler, items.iterator()));
         }
 
         if (counter >= action.getNextTick()) {
             if (data.current != null) {
-                if (!data.handler.actionCompleted(performer, type, source, data.current)) {
-                    actions.remove(action);
+                if (!data.handler.actionCompleted(performer, source, data.current)) {
+                    actionData.remove(action);
                     return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
                 }
             }
             if (!data.targets.hasNext()) {
-                actions.remove(action);
+                actionData.remove(action);
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
             }
             Item item = data.current = data.targets.next();
-            if (data.handler.canActOn(performer, type, source, item, true)) {
-                if (data.handler.actionStarted(performer, type, source, item)) {
-                    action.incNextTick(data.handler.getActionTime(performer, type, source, item) / 10f);
+            if (data.handler.canActOn(performer, source, item, true)) {
+                if (data.handler.actionStarted(performer, source, item)) {
+                    action.incNextTick(data.handler.getActionTime(performer, source, item) / 10f);
                 } else {
-                    actions.remove(action);
+                    actionData.remove(action);
                     return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
                 }
             }

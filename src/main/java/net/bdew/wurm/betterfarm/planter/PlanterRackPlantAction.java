@@ -72,7 +72,7 @@ public class PlanterRackPlantAction extends ContainerAction {
 
         try {
             ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(ItemList.planterPotteryFull);
-            double power = gardening.skillCheck((double) (template.getDifficulty() + dmg), (double) ql, false, 10f);
+            double power = gardening.skillCheck(template.getDifficulty() + dmg, ql, false, 10f);
             if (power <= 0.0D) {
                 performer.getCommunicator().sendNormalServerMessage("Sadly, the fragile " + plantable.getName() + " do not survive despite your best efforts.", (byte) 3);
             } else {

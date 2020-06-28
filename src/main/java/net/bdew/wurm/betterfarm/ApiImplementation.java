@@ -4,20 +4,20 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemTemplate;
 import com.wurmonline.server.items.ItemTemplateFactory;
 import com.wurmonline.server.items.NoSuchTemplateException;
-import net.bdew.wurm.betterfarm.api.BetterFarmAPIHandler;
-import net.bdew.wurm.betterfarm.api.ItemAreaHandler;
+import net.bdew.wurm.betterfarm.api.IBetterFarmAPI;
+import net.bdew.wurm.betterfarm.api.IItemAreaActions;
 
 import java.util.HashMap;
 
-public class ApiImplementation implements BetterFarmAPIHandler {
-    private HashMap<Integer, ItemAreaHandler> handlers = new HashMap<>();
+public class ApiImplementation implements IBetterFarmAPI {
+    private final HashMap<Integer, IItemAreaActions> handlers = new HashMap<>();
 
-    public ItemAreaHandler findHandler(Item item) {
+    public IItemAreaActions findHandler(Item item) {
         return handlers.get(item.getTemplateId());
     }
 
     @Override
-    public void addItemAreaHandler(int templateId, ItemAreaHandler handler) {
+    public void addItemAreaHandler(int templateId, IItemAreaActions handler) {
         try {
             ItemTemplate tpl = ItemTemplateFactory.getInstance().getTemplate(templateId);
             BetterFarmMod.logInfo(String.format("Added handler for %s - %s", tpl.getName(), handler.getClass().getName()));

@@ -13,13 +13,16 @@ import net.bdew.wurm.betterfarm.ActionDef;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.Utils;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
-import net.bdew.wurm.betterfarm.api.ItemAreaHandler;
+import net.bdew.wurm.betterfarm.api.IItemAreaActions;
 import net.bdew.wurm.betterfarm.area.tile.CultivatePerformer;
 import net.bdew.wurm.betterfarm.area.tile.HarvestPerformer;
 import net.bdew.wurm.betterfarm.area.tile.SowPerformer;
 import net.bdew.wurm.betterfarm.area.tile.TendPerformer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -72,19 +75,21 @@ public class AreaActions {
         try {
             final Item target = Items.getItem(targetId);
 
-            ItemAreaHandler handler = BetterFarmMod.apiHandler.findHandler(target);
+            IItemAreaActions handler = BetterFarmMod.apiHandler.findHandler(target);
             if (handler == null) return result;
 
             List<ActionEntry> actions = result.getAvailableActions();
             List<ActionEntry> origActions = new ArrayList<>(actions);
 
-            Arrays.stream(AreaActionType.values())
-                    .filter(type -> handler.canStartOn(performer, type, source, target))
-                    .forEach(type -> Utils.addOrReplaceActions(actions, type.baseAction, type.name,
+            handler.getActions().forEach((type, act) -> {
+                if (act.canStartOn(performer, source, target)) {
+                    Utils.addOrReplaceActions(actions, type.baseAction, type.name,
                             itemActions.get(type).stream()
-                                    .filter(act -> handler.checkSkill(performer, type, act.skillLevel))
+                                    .filter(a -> act.checkSkill(performer, a.skillLevel))
                                     .collect(Collectors.toList()),
-                            "Single", type.goesUnder));
+                            "Single", type.goesUnder);
+                }
+            });
 
             return new SpecialRequestParam(result.getAvailableActions(), result.getHelpString(), origActions);
         } catch (NoSuchItemException e) {
@@ -92,8 +97,8 @@ public class AreaActions {
         }
     }
 
-    private static <T> List<T> createActionList(Function<ActionDef, T> costructor, List<ActionDef> defs) {
-        return defs.stream().map(costructor).collect(Collectors.toList());
+    private static <T> List<T> createActionList(Function<ActionDef, T> cons, List<ActionDef> defs) {
+        return defs.stream().map(cons).collect(Collectors.toList());
     }
 
     private static void initItemActions(AreaActionType type, List<ActionDef> defs) {

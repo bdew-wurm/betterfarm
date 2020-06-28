@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 public class AdvancedItemIdParser extends ItemIdParser {
-    private Map<String, Integer> idMap = new HashMap<>();
+    private final Map<String, Integer> idMap = new HashMap<>();
 
     public AdvancedItemIdParser() {
         IdFactory.getIdsFor(IdType.ITEMTEMPLATE).forEach(e -> idMap.put(e.getKey(), e.getValue()));

@@ -11,7 +11,7 @@ import net.bdew.wurm.betterfarm.area.AreaActions;
 import net.bdew.wurm.betterfarm.planter.PlanterHooks;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPickAction;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPlantAction;
-import net.bdew.wurm.betterfarm.trellis.TrellisHandler;
+import net.bdew.wurm.betterfarm.trellis.TrellisActions;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -56,7 +56,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
     public static ApiImplementation apiHandler;
 
     private List<ActionDef> parseDef(String str) {
-        ArrayList<ActionDef> result = new ArrayList<ActionDef>();
+        ArrayList<ActionDef> result = new ArrayList<>();
         if (str == null || str.isEmpty()) return result;
         String[] parts = str.trim().split(",");
         for (String part : parts) {
@@ -170,6 +170,6 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             ModActions.registerAction(new PlanterRackPlantAction(planterPlantSkill));
         if (planterPickSkill > 0)
             ModActions.registerAction(new PlanterRackPickAction(planterPickSkill));
-        TrellisHandler.register();
+        TrellisActions.register();
     }
 }

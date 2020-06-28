@@ -77,11 +77,11 @@ public class PlanterRackPickAction extends ContainerAction {
             int age = item.getAuxData() & 127;
             int knowledge = (int) gardening.getKnowledge(0.0D);
             float diff = getDifficulty(item.getRealTemplateId(), knowledge);
-            double power = gardening.skillCheck((double) diff, 0.0D, false, 10f);
+            double power = gardening.skillCheck(diff, 0.0D, false, 10f);
 
             try {
                 float ql = Herb.getQL(power, knowledge);
-                Item newItem = ItemFactory.createItem(item.getRealTemplateId(), Math.max(ql, 1.0F), (byte) 0, rarity, (String) null);
+                Item newItem = ItemFactory.createItem(item.getRealTemplateId(), Math.max(ql, 1.0F), (byte) 0, rarity, null);
                 if (ql < 0.0F) {
                     newItem.setDamage(-ql / 2.0F);
                 } else {

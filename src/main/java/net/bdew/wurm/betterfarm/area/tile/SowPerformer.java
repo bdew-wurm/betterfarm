@@ -36,8 +36,8 @@ public class SowPerformer extends TileAreaActionPerformer {
     }
 
 
-    private static Set<Integer> normalSeeds = new HashSet<>();
-    private static Set<Integer> waterSeeds = new HashSet<>();
+    private static final Set<Integer> normalSeeds = new HashSet<>();
+    private static final Set<Integer> waterSeeds = new HashSet<>();
 
     static {
         normalSeeds.add(ItemList.barley);
