@@ -5,7 +5,7 @@ import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemFactory;
 import com.wurmonline.server.items.NoSuchTemplateException;
-import net.bdew.wurm.betterfarm.area.BaseAreaActionPerformer;
+import net.bdew.wurm.betterfarm.area.AreaActionPerformer;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public class Utils {
 
     }
 
-    public static <T extends BaseAreaActionPerformer> void addOrReplaceActions(List<ActionEntry> list, int actionNumber, String name, List<T> available, String singleName, String goesUnder) {
+    public static void addOrReplaceActions(List<ActionEntry> list, int actionNumber, String name, List<AreaActionPerformer> available, String singleName, String goesUnder) {
         if (available.isEmpty()) return;
         if (actionNumber > 0) {
             int p = 0;
@@ -54,7 +54,7 @@ public class Utils {
                     ActionEntry old = list.remove(p);
                     list.add(p++, new ActionEntry((short) (-1 - available.size()), old.getActionString(), ""));
                     list.add(p++, new ActionEntry(old.getNumber(), singleName, old.getVerbString()));
-                    for (BaseAreaActionPerformer act : available) {
+                    for (AreaActionPerformer act : available) {
                         list.add(p++, new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                     }
                     return;
@@ -74,7 +74,7 @@ public class Utils {
                     }
                     if (available.size() > 1) {
                         list.add(p++, new ActionEntry((short) -available.size(), name, ""));
-                        for (BaseAreaActionPerformer act : available) {
+                        for (AreaActionPerformer act : available) {
                             list.add(p++, new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                         }
                     } else {
@@ -87,7 +87,7 @@ public class Utils {
             list.add(new ActionEntry((short) -1, goesUnder, ""));
             if (available.size() > 1) {
                 list.add(new ActionEntry((short) -available.size(), name, ""));
-                for (BaseAreaActionPerformer act : available) {
+                for (AreaActionPerformer act : available) {
                     list.add(new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                 }
             } else {
@@ -96,7 +96,7 @@ public class Utils {
         } else {
             if (available.size() > 1) {
                 list.add(new ActionEntry((short) -available.size(), name, ""));
-                for (BaseAreaActionPerformer act : available) {
+                for (AreaActionPerformer act : available) {
                     list.add(new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                 }
             } else {

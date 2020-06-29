@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area.data;
+package net.bdew.wurm.betterfarm.area;
 
 import com.wurmonline.mesh.MeshIO;
 import net.bdew.wurm.betterfarm.api.ITileAction;

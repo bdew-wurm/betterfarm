@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area.tile;
+package net.bdew.wurm.betterfarm.fields;
 
 import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
@@ -11,42 +11,36 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.zones.CropTilePoller;
-import net.bdew.wurm.betterfarm.AbortAction;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.Utils;
-import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
-import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
-import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class HarvestPerformer extends TileAreaActionPerformer {
+public class FieldActionHarvest extends FieldActionBase {
     private final boolean replant;
 
-    public HarvestPerformer(int radius, boolean replant, float skillLevel) {
-
-        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Harvest%s (%dx%d)", replant ? " and replant" : "", 2 * radius + 1, 2 * radius + 1), "harvesting", new int[]{
-                1 /* ACTION_TYPE_NEED_FOOD */,
-                4 /* ACTION_TYPE_FATIGUE */,
-                48 /* ACTION_TYPE_ENEMY_ALWAYS */,
-                35 /* ACTION_TYPE_MAYBE_USE_ACTIVE_ITEM */
-        }).range(4).build(), radius, skillLevel, Actions.HARVEST);
+    public FieldActionHarvest(boolean replant) {
         this.replant = replant;
     }
 
     @Override
-    protected boolean canStartOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    boolean checkRole(VillageRole role) {
+        return role.mayHarvestFields();
+    }
+
+    @Override
+    public boolean canStartOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         if (!performer.isPlayer() || !onSurface) return false;
-        if (performer.getSkills().getSkillOrLearn(SkillList.FARMING).getKnowledge() < skillLevel) return false;
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
         return t == Tiles.Tile.TILE_FIELD || t == Tiles.Tile.TILE_FIELD2;
     }
 
     @Override
-    protected boolean canActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
-        if (!performer.isPlayer() || !onSurface) return false;
+    public boolean canActOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
+        if (!super.canActOn(performer, source, tilex, tiley, onSurface, tile, message)) return false;
 
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
 
@@ -83,11 +77,11 @@ public class HarvestPerformer extends TileAreaActionPerformer {
             return false;
         }
 
-        return super.canActOnTile(performer, source, tilex, tiley, onSurface, tile, message);
+        return true;
     }
 
     @Override
-    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) throws AbortAction {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         int crop = Crops.getCropNumber(Tiles.decodeType(tile), Tiles.decodeData(tile));
         double difficulty = 0;
         int templateId;
@@ -96,7 +90,7 @@ public class HarvestPerformer extends TileAreaActionPerformer {
             templateId = ReflectionUtil.callPrivateMethod(null, ReflectionUtil.getMethod(Crops.class, "getProductTemplate", new Class[]{int.class}), crop);
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             BetterFarmMod.logException("Error getting crop difficulty or template", e);
-            return;
+            return true;
         }
 
         if (crop > 3) source = null;
@@ -104,10 +98,8 @@ public class HarvestPerformer extends TileAreaActionPerformer {
         Skill farming = performer.getSkills().getSkillOrLearn(SkillList.FARMING);
         Skill tool = (source == null) ? null : performer.getSkills().getSkillOrLearn(SkillList.SCYTHE);
 
-
         performer.getStatus().modifyStamina(-2000.0f);
         if (source != null) {
-            source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier());
             Methods.sendSound(performer, "sound.work.farming.scythe");
         } else {
             Methods.sendSound(performer, "sound.work.farming.harvest");
@@ -117,8 +109,8 @@ public class HarvestPerformer extends TileAreaActionPerformer {
         if (rarity > 0)
             performer.playPersonalSound("sound.fx.drumroll");
 
-        final double power = farming.skillCheck(difficulty, 0.0, false, baseTime);
-        if (tool != null) tool.skillCheck(difficulty, source, 0.0, false, baseTime);
+        final double power = farming.skillCheck(difficulty, 0.0, false, 10);
+        if (tool != null) tool.skillCheck(difficulty, source, 0.0, false, 10);
 
         byte itemRarity = (source == null) ? 0 : source.getRarity();
 
@@ -157,7 +149,7 @@ public class HarvestPerformer extends TileAreaActionPerformer {
             int enc = ReflectionUtil.getPrivateField(performer, ReflectionUtil.getField(Creature.class, "encumbered"));
             if (performer.getCarriedWeight() + quantity * ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams() > enc) {
                 performer.getCommunicator().sendNormalServerMessage("You stop harvesting as carrying more produce would make you encumbered.");
-                throw new AbortAction();
+                return false;
             }
         } catch (IllegalAccessException | NoSuchFieldException | NoSuchTemplateException e) {
             BetterFarmMod.logException("Error checking encumbered", e);
@@ -193,15 +185,30 @@ public class HarvestPerformer extends TileAreaActionPerformer {
 
         performer.getMovementScheme().touchFreeMoveCounter();
         Players.getInstance().sendChangedTile(tilex, tiley, onSurface, false);
+
+        if (source != null) {
+            if (source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier())) {
+                performer.getCommunicator().sendNormalServerMessage(String.format("Your %s broke!", source.getName().toLowerCase()));
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
-    protected void doAnimation(Creature performer) {
+    public boolean actionStarted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         performer.playAnimation("farm", false);
+        return true;
     }
 
     @Override
-    protected float tileActionTime(Creature performer, Item source) {
+    public boolean checkSkill(Creature performer, float needed) {
+        return false;
+    }
+
+    @Override
+    public float getActionTime(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.FARMING), source, 0.0D);
     }
 }

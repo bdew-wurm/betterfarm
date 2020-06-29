@@ -4,7 +4,6 @@ import com.wurmonline.server.behaviours.Action;
 import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
-import net.bdew.wurm.betterfarm.AbortAction;
 import org.gotti.wurmunlimited.modsupport.actions.*;
 
 import java.util.Collections;
@@ -35,7 +34,7 @@ public abstract class ContainerAction implements ModAction, ActionPerformer, Beh
 
     protected abstract boolean canActOnItem(Creature performer, Item item);
 
-    protected abstract void doActOnItem(Creature performer, Item source, Item item) throws AbortAction;
+    protected abstract boolean doActOnItem(Creature performer, Item source, Item item);
 
     protected abstract float baseActionTime(Creature performer, Item source);
 
@@ -71,52 +70,50 @@ public abstract class ContainerAction implements ModAction, ActionPerformer, Beh
             return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
         }
 
-        try {
-            if (counter == 1f) {
-                if (shouldAbortAction(performer, source, target))
-                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+        if (counter == 1f) {
+            if (shouldAbortAction(performer, source, target))
+                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
 
-                float baseTime = baseActionTime(performer, source);
+            float baseTime = baseActionTime(performer, source);
 
-                action.setData((long) (baseTime * 1000));
+            action.setData((long) (baseTime * 1000));
 
-                float totalTime = 0;
-                for (Item sub : target.getItems()) {
-                    if (canActOnItem(performer, sub))
-                        totalTime += baseTime;
-                }
-
-                if (totalTime == 0) {
-                    performer.getCommunicator().sendNormalServerMessage(String.format("There are no %s in the %s.", targetsStr, target.getName()));
-                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-                }
-
-                totalTime = (float) Math.ceil(totalTime);
-
-                action.setTimeLeft((int) totalTime);
-                performer.sendActionControl(actionEntry.getVerbString(), true, (int) totalTime);
-                action.setNextTick(1 + baseTime / 10);
-                performer.getCommunicator().sendNormalServerMessage(String.format("You start %s the %s in the %s.", actionEntry.getVerbString(), targetsStr, target.getName()));
-
-            } else {
-                if (counter >= action.getNextTick()) {
-                    for (Item sub : target.getItems()) {
-                        if (canActOnItem(performer, sub)) {
-                            doActOnItem(performer, source, sub);
-                            action.incNextTick(action.getData() * 0.0001f);
-                            if (shouldAbortAction(performer, source, target))
-                                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-                            else
-                                return propagate(action, ActionPropagation.CONTINUE_ACTION);
-                        }
-                    }
-
-                    performer.getCommunicator().sendNormalServerMessage(String.format("You finish %s.", actionEntry.getVerbString()));
-                    return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-                }
+            float totalTime = 0;
+            for (Item sub : target.getItems()) {
+                if (canActOnItem(performer, sub))
+                    totalTime += baseTime;
             }
-        } catch (AbortAction ignored) {
-            return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+
+            if (totalTime == 0) {
+                performer.getCommunicator().sendNormalServerMessage(String.format("There are no %s in the %s.", targetsStr, target.getName()));
+                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+            }
+
+            totalTime = (float) Math.ceil(totalTime);
+
+            action.setTimeLeft((int) totalTime);
+            performer.sendActionControl(actionEntry.getVerbString(), true, (int) totalTime);
+            action.setNextTick(1 + baseTime / 10);
+            performer.getCommunicator().sendNormalServerMessage(String.format("You start %s the %s in the %s.", actionEntry.getVerbString(), targetsStr, target.getName()));
+
+        } else {
+            if (counter >= action.getNextTick()) {
+                for (Item sub : target.getItems()) {
+                    if (canActOnItem(performer, sub)) {
+                        if (!doActOnItem(performer, source, sub)) {
+                            return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+                        }
+                        action.incNextTick(action.getData() * 0.0001f);
+                        if (shouldAbortAction(performer, source, target))
+                            return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+                        else
+                            return propagate(action, ActionPropagation.CONTINUE_ACTION);
+                    }
+                }
+
+                performer.getCommunicator().sendNormalServerMessage(String.format("You finish %s.", actionEntry.getVerbString()));
+                return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
+            }
         }
         return propagate(action, ActionPropagation.CONTINUE_ACTION);
     }

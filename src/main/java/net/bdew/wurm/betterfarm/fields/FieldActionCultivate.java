@@ -34,9 +34,7 @@ public class FieldActionCultivate extends FieldActionBase {
     @Override
     public boolean canActOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
         if (!super.canActOn(performer, source, tilex, tiley, onSurface, tile, message)) return false;
-
-        if (!performer.isPlayer() || source == null || (source.getTemplateId() != ItemList.shovel && source.getTemplateId() != ItemList.rake) || !onSurface)
-            return false;
+        if (!canStartOn(performer, source, tilex, tiley, onSurface, tile)) return false;
 
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
 

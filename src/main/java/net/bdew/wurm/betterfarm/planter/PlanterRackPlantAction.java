@@ -9,7 +9,6 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
-import net.bdew.wurm.betterfarm.AbortAction;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -60,12 +59,13 @@ public class PlanterRackPlantAction extends ContainerAction {
 
 
     @Override
-    protected void doActOnItem(Creature performer, Item source, Item item) throws AbortAction {
+    protected boolean doActOnItem(Creature performer, Item source, Item item) {
         Item plantable = findPlantable(source);
         if (plantable == null) {
             performer.getCommunicator().sendNormalServerMessage(String.format("You stop planting as there are no more things to plant in the %s.", source.getName()));
-            throw new AbortAction();
+            return false;
         }
+
         float ql = (plantable.getQualityLevel() + item.getQualityLevel()) / 2f;
         float dmg = (plantable.getDamage() + item.getDamage()) / 2f;
         Skill gardening = performer.getSkills().getSkillOrLearn(SkillList.GARDENING);
@@ -90,6 +90,8 @@ public class PlanterRackPlantAction extends ContainerAction {
         } catch (NoSuchTemplateException | NoSuchItemException | FailedException e) {
             BetterFarmMod.logException(String.format("Error planting herb %d into %d", plantable.getWurmId(), item.getWurmId()), e);
         }
+
+        return true;
     }
 
     @Override

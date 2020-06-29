@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area.data;
+package net.bdew.wurm.betterfarm.area;
 
 import com.wurmonline.server.items.Item;
 import net.bdew.wurm.betterfarm.api.IItemAction;

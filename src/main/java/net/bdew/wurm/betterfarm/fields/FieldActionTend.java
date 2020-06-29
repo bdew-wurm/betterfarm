@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area.tile;
+package net.bdew.wurm.betterfarm.fields;
 
 import com.wurmonline.mesh.FieldData;
 import com.wurmonline.mesh.Tiles;
@@ -13,36 +13,29 @@ import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.RuneUtilities;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.VillageRole;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
-import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
-import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
-import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class TendPerformer extends TileAreaActionPerformer {
-    public TendPerformer(int radius, float skillLevel) {
-        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Farm (%dx%d)", 2 * radius + 1, 2 * radius + 1), "farming", new int[]{
-                1 /* ACTION_TYPE_NEED_FOOD */,
-                4 /* ACTION_TYPE_FATIGUE */,
-                48 /* ACTION_TYPE_ENEMY_ALWAYS */,
-                36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }).range(4).build(), radius, skillLevel, Actions.FARM);
+public class FieldActionTend extends FieldActionBase {
+    @Override
+    boolean checkRole(VillageRole role) {
+        return role.mayFarm();
     }
 
     @Override
-    protected boolean canStartOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    public boolean canStartOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         if (!performer.isPlayer() || source == null || source.getTemplateId() != ItemList.rake) return false;
-        if (performer.getSkills().getSkillOrLearn(SkillList.FARMING).getKnowledge() < skillLevel) return false;
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
         return t == Tiles.Tile.TILE_FIELD || t == Tiles.Tile.TILE_FIELD2;
     }
 
     @Override
-    protected boolean canActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
-        if (!performer.isPlayer() || source == null || source.getTemplateId() != ItemList.rake || !onSurface)
-            return false;
+    public boolean canActOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
+        if (!super.canActOn(performer, source, tilex, tiley, onSurface, tile, message)) return false;
+        if (source == null || source.getTemplateId() != ItemList.rake) return false;
 
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
 
@@ -66,13 +59,12 @@ public class TendPerformer extends TileAreaActionPerformer {
             return false;
         }
 
-
-        return super.canActOnTile(performer, source, tilex, tiley, onSurface, tile, message);
+        return true;
     }
 
 
     @Override
-    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         byte data = Tiles.decodeData(tile);
         byte type = Tiles.decodeType(tile);
         int crop = Crops.getCropNumber(type, data);
@@ -85,7 +77,6 @@ public class TendPerformer extends TileAreaActionPerformer {
         }
 
         Methods.sendSound(performer, "sound.work.farming.rake");
-        source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier());
         performer.getStatus().modifyStamina(-1000.0F);
         byte rarity = performer.getRarity();
         if (rarity > 0)
@@ -95,8 +86,8 @@ public class TendPerformer extends TileAreaActionPerformer {
         Skill farming = performer.getSkills().getSkillOrLearn(SkillList.FARMING);
         Skill rake = performer.getSkills().getSkillOrLearn(SkillList.RAKE);
 
-        double bonus = rake.skillCheck(difficulty, source, 0.0, false, baseTime) / 10.0;
-        double power = Math.max(0.0, farming.skillCheck(difficulty, source, bonus, false, baseTime));
+        double bonus = rake.skillCheck(difficulty, source, 0.0, false, 10) / 10.0;
+        double power = Math.max(0.0, farming.skillCheck(difficulty, source, bonus, false, 10));
 
         String name = FieldData.getTypeName(Tiles.getTile(type), data).toLowerCase();
 
@@ -138,15 +129,28 @@ public class TendPerformer extends TileAreaActionPerformer {
             performer.getCommunicator().sendNormalServerMessage("farmedCount is:" + farmedCount + " farmedChance is:" + farmedChance);
         }
         Players.getInstance().sendChangedTile(tilex, tiley, onSurface, false);
+
+        if (source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier())) {
+            performer.getCommunicator().sendNormalServerMessage(String.format("Your %s broke!", source.getName().toLowerCase()));
+            return false;
+        }
+
+        return true;
     }
 
     @Override
-    protected void doAnimation(Creature performer) {
-        performer.playAnimation("farm", false);
+    public boolean checkSkill(Creature performer, float needed) {
+        return performer.getSkills().getSkillOrLearn(SkillList.FARMING).getRealKnowledge() >= needed;
     }
 
     @Override
-    protected float tileActionTime(Creature performer, Item source) {
+    public float getActionTime(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.FARMING), source, 0.0D);
+    }
+
+    @Override
+    public boolean actionStarted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+        performer.playAnimation("farm", false);
+        return true;
     }
 }

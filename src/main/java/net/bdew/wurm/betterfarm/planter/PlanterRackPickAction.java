@@ -10,7 +10,6 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
-import net.bdew.wurm.betterfarm.AbortAction;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
@@ -62,53 +61,55 @@ public class PlanterRackPickAction extends ContainerAction {
     }
 
     @Override
-    protected void doActOnItem(Creature performer, Item source, Item item) throws AbortAction {
+    protected boolean doActOnItem(Creature performer, Item source, Item item) {
         ItemTemplate growing = item.getRealTemplate();
         if (!performer.getInventory().mayCreatureInsertItem()) {
             performer.getCommunicator().sendNormalServerMessage("Your inventory is full. You would have no space to put whatever you pick.");
-            throw new AbortAction();
-        } else {
-            Skill gardening = performer.getSkills().getSkillOrLearn(SkillList.GARDENING);
-            byte rarity = performer.getRarity();
-            if (rarity != 0) {
-                performer.playPersonalSound("sound.fx.drumroll");
-            }
-
-            int age = item.getAuxData() & 127;
-            int knowledge = (int) gardening.getKnowledge(0.0D);
-            float diff = getDifficulty(item.getRealTemplateId(), knowledge);
-            double power = gardening.skillCheck(diff, 0.0D, false, 10f);
-
-            try {
-                float ql = Herb.getQL(power, knowledge);
-                Item newItem = ItemFactory.createItem(item.getRealTemplateId(), Math.max(ql, 1.0F), (byte) 0, rarity, null);
-                if (ql < 0.0F) {
-                    newItem.setDamage(-ql / 2.0F);
-                } else {
-                    newItem.setIsFresh(true);
-                }
-                Item inventory = performer.getInventory();
-                inventory.insertItem(newItem);
-            } catch (FailedException | NoSuchTemplateException e) {
-                BetterFarmMod.logException(String.format("Error picking herb from %d", item.getTemplateId()), e);
-            }
-
-            item.setLastMaintained(WurmCalendar.currentTime);
-            if (power < -50.0D) {
-                performer.getCommunicator().sendNormalServerMessage("You broke off more than needed and damaged the plant, but still managed to get " + growing.getNameWithGenus() + ".");
-                item.setAuxData((byte) (age + 1));
-            } else if (power > 0.0D) {
-                performer.getCommunicator().sendNormalServerMessage("You successfully picked " + growing.getNameWithGenus() + ", it now looks healthier.");
-                item.setAuxData((byte) (age + 1));
-            } else {
-                performer.getCommunicator().sendNormalServerMessage("You successfully picked " + growing.getNameWithGenus() + ".");
-                item.setAuxData((byte) (age + 1));
-            }
+            return false;
         }
+
+        Skill gardening = performer.getSkills().getSkillOrLearn(SkillList.GARDENING);
+        byte rarity = performer.getRarity();
+        if (rarity != 0) {
+            performer.playPersonalSound("sound.fx.drumroll");
+        }
+
+        int age = item.getAuxData() & 127;
+        int knowledge = (int) gardening.getKnowledge(0.0D);
+        float diff = getDifficulty(item.getRealTemplateId(), knowledge);
+        double power = gardening.skillCheck(diff, 0.0D, false, 10f);
+
+        try {
+            float ql = Herb.getQL(power, knowledge);
+            Item newItem = ItemFactory.createItem(item.getRealTemplateId(), Math.max(ql, 1.0F), (byte) 0, rarity, null);
+            if (ql < 0.0F) {
+                newItem.setDamage(-ql / 2.0F);
+            } else {
+                newItem.setIsFresh(true);
+            }
+            Item inventory = performer.getInventory();
+            inventory.insertItem(newItem);
+        } catch (FailedException | NoSuchTemplateException e) {
+            BetterFarmMod.logException(String.format("Error picking herb from %d", item.getTemplateId()), e);
+        }
+
+        item.setLastMaintained(WurmCalendar.currentTime);
+        if (power < -50.0D) {
+            performer.getCommunicator().sendNormalServerMessage("You broke off more than needed and damaged the plant, but still managed to get " + growing.getNameWithGenus() + ".");
+            item.setAuxData((byte) (age + 1));
+        } else if (power > 0.0D) {
+            performer.getCommunicator().sendNormalServerMessage("You successfully picked " + growing.getNameWithGenus() + ", it now looks healthier.");
+            item.setAuxData((byte) (age + 1));
+        } else {
+            performer.getCommunicator().sendNormalServerMessage("You successfully picked " + growing.getNameWithGenus() + ".");
+            item.setAuxData((byte) (age + 1));
+        }
+
+        return true;
     }
 
     @Override
     protected float baseActionTime(Creature performer, Item source) {
-        return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.GARDENING), null, 0.0D) / 5;
+        return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.GARDENING), null, 0.0D) / 5f;
     }
 }

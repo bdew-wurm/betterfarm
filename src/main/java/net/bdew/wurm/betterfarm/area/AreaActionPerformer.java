@@ -5,6 +5,7 @@ import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Constants;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.behaviours.Action;
+import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.zones.VolaTile;
@@ -13,9 +14,8 @@ import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
 import net.bdew.wurm.betterfarm.api.IItemAction;
 import net.bdew.wurm.betterfarm.api.ITileAction;
-import net.bdew.wurm.betterfarm.area.data.ItemActionData;
-import net.bdew.wurm.betterfarm.area.data.TileActionData;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
+import org.gotti.wurmunlimited.modsupport.actions.ActionPerformer;
 import org.gotti.wurmunlimited.modsupport.actions.ActionPropagation;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
@@ -23,19 +23,29 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-public class AreaActionPerformer extends BaseAreaActionPerformer {
+public class AreaActionPerformer implements ActionPerformer {
+    public final int radius;
+    public final float skillLevel;
+    public final ActionEntry actionEntry;
     private final AreaActionType type;
     private final WeakHashMap<Action, ItemActionData> itemActionData = new WeakHashMap<>();
     private final WeakHashMap<Action, TileActionData> tileActionData = new WeakHashMap<>();
 
     public AreaActionPerformer(AreaActionType type, float skillLevel, int radius) {
-        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("%s (%dx%d)", type.name, 2 * radius + 1, 2 * radius + 1), type.verb, new int[]{
+        actionEntry = new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("%s (%dx%d)", type.name, 2 * radius + 1, 2 * radius + 1), type.verb, new int[]{
                 1 /* ACTION_TYPE_NEED_FOOD */,
                 4 /* ACTION_TYPE_FATIGUE */,
                 48 /* ACTION_TYPE_ENEMY_ALWAYS */,
                 35 /* ACTION_TYPE_MAYBE_USE_ACTIVE_ITEM */
-        }).range(4).build(), radius, skillLevel);
+        }).range(4).build();
+
+        this.radius = radius;
+        this.skillLevel = skillLevel;
         this.type = type;
+
+        ModActions.registerAction(actionEntry);
+        ModActions.registerActionPerformer(this);
+
         BetterFarmMod.logInfo(String.format("Registered action %d - %s (%dx%d)", getActionId(), type.name, 2 * radius + 1, 2 * radius + 1));
     }
 
@@ -205,5 +215,10 @@ public class AreaActionPerformer extends BaseAreaActionPerformer {
         }
 
         return propagate(action, ActionPropagation.CONTINUE_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
+    }
+
+    @Override
+    public short getActionId() {
+        return actionEntry.getNumber();
     }
 }
