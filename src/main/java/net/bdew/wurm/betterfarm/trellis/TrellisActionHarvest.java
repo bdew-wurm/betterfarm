@@ -15,13 +15,11 @@ import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.Utils;
 
 public class TrellisActionHarvest extends TrellisActionBase {
-    public TrellisActionHarvest(TrellisType type) {
-        super(type);
-    }
 
     @Override
     public boolean canActOn(Creature performer, Item source, Item target, boolean sendMsg) {
-        if (type.productId <= 0) return false;
+        TrellisType type = TrellisType.fromItem(target);
+        if (type == null || type.productId <= 0) return false;
 
         if (!super.canActOn(performer, source, target, sendMsg)) return false;
 
@@ -67,6 +65,9 @@ public class TrellisActionHarvest extends TrellisActionBase {
 
     @Override
     public boolean actionCompleted(Creature performer, Item source, Item target) {
+        TrellisType type = TrellisType.fromItem(target);
+        if (type == null || type.productId <= 0) return true;
+
         if (!target.isHarvestable()) {
             performer.getCommunicator().sendNormalServerMessage("You try to harvest but realize there is nothing on this trellis.");
             return true;

@@ -1,4 +1,4 @@
-package net.bdew.wurm.betterfarm.area.tile;
+package net.bdew.wurm.betterfarm.fields;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
@@ -10,36 +10,31 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.zones.NoSuchZoneException;
 import com.wurmonline.server.zones.Zone;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
-import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
-import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
-import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
-public class CultivatePerformer extends TileAreaActionPerformer {
-    public CultivatePerformer(int radius, float skillLevel) {
-        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Cultivate (%dx%d)", 2 * radius + 1, 2 * radius + 1), "cultivating", new int[]{
-                1 /* ACTION_TYPE_NEED_FOOD */,
-                4 /* ACTION_TYPE_FATIGUE */,
-                48 /* ACTION_TYPE_ENEMY_ALWAYS */,
-                36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }).range(4).build(), radius, skillLevel, Actions.CULTIVATE);
-    }
-
+public class FieldActionCultivate extends FieldActionBase {
     private boolean isCultivatable(byte type) {
         return type == Tiles.Tile.TILE_DIRT_PACKED.id || type == Tiles.Tile.TILE_MOSS.id || type == Tiles.Tile.TILE_GRASS.id || type == Tiles.Tile.TILE_STEPPE.id || type == Tiles.Tile.TILE_MYCELIUM.id;
     }
 
     @Override
-    protected boolean canStartOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
-        return performer.isPlayer() && performer.getSkills().getSkillOrLearn(SkillList.DIGGING).getKnowledge() >= skillLevel &&
-                source != null && (source.getTemplateId() == ItemList.shovel || source.getTemplateId() == ItemList.rake) && onSurface;
+    boolean checkRole(VillageRole role) {
+        return role.mayCultivate();
     }
 
     @Override
-    protected boolean canActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
+    public boolean canStartOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+        return source != null && (source.getTemplateId() == ItemList.shovel || source.getTemplateId() == ItemList.rake) && onSurface;
+    }
+
+    @Override
+    public boolean canActOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
+        if (!super.canActOn(performer, source, tilex, tiley, onSurface, tile, message)) return false;
+
         if (!performer.isPlayer() || source == null || (source.getTemplateId() != ItemList.shovel && source.getTemplateId() != ItemList.rake) || !onSurface)
             return false;
 
@@ -51,18 +46,16 @@ public class CultivatePerformer extends TileAreaActionPerformer {
             return false;
         }
 
-        return super.canActOnTile(performer, source, tilex, tiley, onSurface, tile, message);
+        return true;
     }
 
-
     @Override
-    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         performer.getCommunicator().sendNormalServerMessage("You cultivate some soil and it's ready to sow now.");
         Server.getInstance().broadCastAction(performer.getName() + " cultivates some soil.", performer, 5);
         performer.getStatus().modifyStamina(-1000.0F);
-        source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier());
         Skill digging = performer.getSkills().getSkillOrLearn(SkillList.DIGGING);
-        digging.skillCheck(14.0D, source, 0.0D, false, baseTime);
+        digging.skillCheck(14.0D, source, 0.0D, false, 10);
         Methods.sendSound(performer, "sound.work.digging" + (Server.rand.nextInt(3) + 1));
         short h = Tiles.decodeHeight(tile);
         Server.setSurfaceTile(tilex, tiley, h, Tiles.Tile.TILE_DIRT.id, (byte) 0);
@@ -73,15 +66,26 @@ public class CultivatePerformer extends TileAreaActionPerformer {
         } catch (NoSuchZoneException e) {
             BetterFarmMod.logException("Failed to get zone for tile", e);
         }
+        if (source.setDamage(source.getDamage() + 0.0015F * source.getDamageModifier())) {
+            performer.getCommunicator().sendNormalServerMessage(String.format("Your %s broke!", source.getName().toLowerCase()));
+            return false;
+        }
+        return true;
     }
 
     @Override
-    protected void doAnimation(Creature performer) {
+    public boolean actionStarted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         performer.playAnimation("farm", false);
+        return true;
     }
 
     @Override
-    protected float tileActionTime(Creature performer, Item source) {
+    public boolean checkSkill(Creature performer, float needed) {
+        return performer.getSkills().getSkillOrLearn(SkillList.DIGGING).getRealKnowledge() >= needed;
+    }
+
+    @Override
+    public float getActionTime(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.DIGGING), source, 0.0D);
     }
 }

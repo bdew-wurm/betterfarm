@@ -5,7 +5,6 @@ import com.wurmonline.server.Items;
 import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.behaviours.ActionEntry;
-import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
@@ -13,11 +12,8 @@ import net.bdew.wurm.betterfarm.ActionDef;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.Utils;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
-import net.bdew.wurm.betterfarm.api.IItemAreaActions;
-import net.bdew.wurm.betterfarm.area.tile.CultivatePerformer;
-import net.bdew.wurm.betterfarm.area.tile.HarvestPerformer;
-import net.bdew.wurm.betterfarm.area.tile.SowPerformer;
-import net.bdew.wurm.betterfarm.area.tile.TendPerformer;
+import net.bdew.wurm.betterfarm.api.IItemAction;
+import net.bdew.wurm.betterfarm.api.ITileAction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,8 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AreaActions {
-    static List<TileAreaActionPerformer> cultivateActions, sowActions, tendActions, harvestActions, replantActions;
-    static Map<AreaActionType, List<ItemAreaActionPerformer>> itemActions;
+    static Map<AreaActionType, List<AreaActionPerformer>> actionPerformers;
 
     static class SpecialRequestParam extends BehaviourDispatcher.RequestParam {
         private final List<ActionEntry> originalActions, filteredActions;
@@ -53,20 +48,24 @@ public class AreaActions {
         List<ActionEntry> actions = result.getAvailableActions();
         List<ActionEntry> origActions = new ArrayList<>(actions);
 
-        final int x = Tiles.decodeTileX(target);
-        final int y = Tiles.decodeTileY(target);
-        final int tile = Server.surfaceMesh.getTile(x, y);
+        int x = Tiles.decodeTileX(target);
+        int y = Tiles.decodeTileY(target);
+        int tileData = Server.surfaceMesh.getTile(x, y);
+        byte tileType = Tiles.decodeType(tileData);
 
-        Function<List<TileAreaActionPerformer>, List<TileAreaActionPerformer>> filter =
-                l -> l.stream().filter(
-                        a -> a.canStartOnTile(performer, source, x, y, onSurface, tile)
-                ).collect(Collectors.toList());
+        Map<AreaActionType, ITileAction> handlers = BetterFarmMod.apiHandler.getTileActions(tileType);
+        if (handlers == null) return result;
 
-        Utils.addOrReplaceActions(actions, Actions.CULTIVATE, "Cultivate", filter.apply(cultivateActions), "Tile", null);
-        Utils.addOrReplaceActions(actions, Actions.SOW, "Sow", filter.apply(sowActions), "Tile", null);
-        Utils.addOrReplaceActions(actions, Actions.FARM, "Farm", filter.apply(tendActions), "Tile", null);
-        Utils.addOrReplaceActions(actions, Actions.HARVEST, "Harvest", filter.apply(harvestActions), "Tile", null);
-        Utils.addOrReplaceActions(actions, 0, "Harvest and replant", filter.apply(replantActions), "Tile", null);
+        handlers.forEach((type, act) -> {
+            if (act.canStartOn(performer, source, x, y, onSurface, tileData)) {
+                Utils.addOrReplaceActions(actions, type.baseAction, type.name,
+                        actionPerformers.get(type).stream()
+                                .filter(a -> act.checkSkill(performer, a.skillLevel))
+                                .collect(Collectors.toList()),
+                        "Tile", type.goesUnder);
+            }
+        });
+
 
         return new SpecialRequestParam(result.getAvailableActions(), result.getHelpString(), origActions);
     }
@@ -75,16 +74,16 @@ public class AreaActions {
         try {
             final Item target = Items.getItem(targetId);
 
-            IItemAreaActions handler = BetterFarmMod.apiHandler.findHandler(target);
-            if (handler == null) return result;
+            Map<AreaActionType, IItemAction> handlers = BetterFarmMod.apiHandler.getItemActions(target);
+            if (handlers == null) return result;
 
             List<ActionEntry> actions = result.getAvailableActions();
             List<ActionEntry> origActions = new ArrayList<>(actions);
 
-            handler.getActions().forEach((type, act) -> {
+            handlers.forEach((type, act) -> {
                 if (act.canStartOn(performer, source, target)) {
                     Utils.addOrReplaceActions(actions, type.baseAction, type.name,
-                            itemActions.get(type).stream()
+                            actionPerformers.get(type).stream()
                                     .filter(a -> act.checkSkill(performer, a.skillLevel))
                                     .collect(Collectors.toList()),
                             "Single", type.goesUnder);
@@ -102,16 +101,11 @@ public class AreaActions {
     }
 
     private static void initItemActions(AreaActionType type, List<ActionDef> defs) {
-        itemActions.put(type, createActionList(i -> new ItemAreaActionPerformer(type, i.level, i.radius), defs));
+        actionPerformers.put(type, createActionList(i -> new AreaActionPerformer(type, i.level, i.radius), defs));
     }
 
     public static void initActionLists() {
-        cultivateActions = createActionList(i -> new CultivatePerformer(i.radius, i.level), BetterFarmMod.cultivateLevels);
-        sowActions = createActionList(i -> new SowPerformer(i.radius, i.level), BetterFarmMod.sowLevels);
-        tendActions = createActionList(i -> new TendPerformer(i.radius, i.level), BetterFarmMod.tendLevels);
-        harvestActions = createActionList(i -> new HarvestPerformer(i.radius, false, i.level), BetterFarmMod.harvestLevels);
-        replantActions = createActionList(i -> new HarvestPerformer(i.radius, true, i.level), BetterFarmMod.replantLevels);
-        itemActions = new HashMap<>();
+        actionPerformers = new HashMap<>();
         initItemActions(AreaActionType.CULTIVATE, BetterFarmMod.cultivateLevels);
         initItemActions(AreaActionType.SOW, BetterFarmMod.sowLevels);
         initItemActions(AreaActionType.FARM, BetterFarmMod.tendLevels);

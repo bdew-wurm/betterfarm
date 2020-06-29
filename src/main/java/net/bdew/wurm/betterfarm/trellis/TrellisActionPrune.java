@@ -11,10 +11,6 @@ import com.wurmonline.server.sounds.SoundPlayer;
 import com.wurmonline.server.villages.VillageRole;
 
 public class TrellisActionPrune extends TrellisActionBase {
-    public TrellisActionPrune(TrellisType type) {
-        super(type);
-    }
-
     @Override
     public boolean canActOn(Creature performer, Item source, Item target, boolean sendMsg) {
         if (!super.canActOn(performer, source, target, sendMsg)) return false;

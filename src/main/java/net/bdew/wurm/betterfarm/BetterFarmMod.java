@@ -8,6 +8,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import net.bdew.wurm.betterfarm.api.BetterFarmAPI;
 import net.bdew.wurm.betterfarm.area.AreaActions;
+import net.bdew.wurm.betterfarm.fields.FieldActions;
 import net.bdew.wurm.betterfarm.planter.PlanterHooks;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPickAction;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPlantAction;
@@ -171,5 +172,6 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         if (planterPickSkill > 0)
             ModActions.registerAction(new PlanterRackPickAction(planterPickSkill));
         TrellisActions.register();
+        FieldActions.register();
     }
 }

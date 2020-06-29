@@ -1,10 +1,9 @@
-package net.bdew.wurm.betterfarm.area.tile;
+package net.bdew.wurm.betterfarm.fields;
 
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.Servers;
-import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Crops;
 import com.wurmonline.server.behaviours.Terraforming;
 import com.wurmonline.server.creatures.Creature;
@@ -12,30 +11,18 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.zones.CropTilePoller;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
-import net.bdew.wurm.betterfarm.area.TileAreaActionPerformer;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
-import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
-import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SowPerformer extends TileAreaActionPerformer {
-    public SowPerformer(int radius, float skillLevel) {
-        super(new ActionEntryBuilder((short) ModActions.getNextActionId(), String.format("Sow (%dx%d)", 2 * radius + 1, 2 * radius + 1), "sowing", new int[]{
-                1 /* ACTION_TYPE_NEED_FOOD */,
-                4 /* ACTION_TYPE_FATIGUE */,
-                48 /* ACTION_TYPE_ENEMY_ALWAYS */,
-                36 /* ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM */
-        }).range(4).build(), radius, skillLevel, Actions.SOW);
-    }
-
-
+public class FieldActionSow extends FieldActionBase {
     private static final Set<Integer> normalSeeds = new HashSet<>();
     private static final Set<Integer> waterSeeds = new HashSet<>();
 
@@ -79,16 +66,27 @@ public class SowPerformer extends TileAreaActionPerformer {
     }
 
     @Override
-    protected boolean canStartOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    boolean checkRole(VillageRole role) {
+        return role.maySowFields();
+    }
+
+    @Override
+    public boolean checkSkill(Creature performer, float needed) {
+        return performer.getSkills().getSkillOrLearn(SkillList.FARMING).getRealKnowledge() >= needed;
+    }
+
+    @Override
+    public boolean canStartOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         if (!performer.isPlayer() || source == null || !source.isHollow() || !onSurface) return false;
-        if (performer.getSkills().getSkillOrLearn(SkillList.FARMING).getKnowledge() < skillLevel) return false;
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
         return t == Tiles.Tile.TILE_DIRT;
     }
 
     @Override
-    protected boolean canActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
-        if (!performer.isPlayer() || source == null || !source.isHollow() || !onSurface) return false;
+    public boolean canActOn(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, boolean message) {
+        if (!super.canActOn(performer, source, tilex, tiley, onSurface, tile, message)) return false;
+
+        if (source == null || !source.isHollow()) return false;
 
         Tiles.Tile t = Tiles.getTile(Tiles.decodeType(tile));
 
@@ -128,22 +126,20 @@ public class SowPerformer extends TileAreaActionPerformer {
 
         Item seed = findSeed(source, isUnderWater);
 
-
         if (seed == null) {
             if (message)
                 performer.getCommunicator().sendNormalServerMessage(String.format("You skip the %s since you don't have any matching seed in your %s.", t.getName().toLowerCase(), source.getName()));
             return false;
         }
 
-        return super.canActOnTile(performer, source, tilex, tiley, onSurface, tile, message);
+        return true;
     }
 
-
     @Override
-    protected void doActOnTile(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, float baseTime) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         final boolean isUnderWater = Terraforming.isCornerUnderWater(tilex, tiley, onSurface);
         Item seed = findSeed(source, isUnderWater);
-        if (seed == null) return;
+        if (seed == null) return false;
 
         performer.getStatus().modifyStamina(-2000.0f);
 
@@ -155,13 +151,11 @@ public class SowPerformer extends TileAreaActionPerformer {
             diff = ReflectionUtil.callPrivateMethod(null, ReflectionUtil.getMethod(Crops.class, "getDifficultyFor", new Class[]{int.class}), crop);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             BetterFarmMod.logException("Error getting crop", e);
-            return;
+            return false;
         }
 
         byte rarity = performer.getRarity();
-        if (rarity > 0) {
-            performer.playPersonalSound("sound.fx.drumroll");
-        }
+        if (rarity > 0) performer.playPersonalSound("sound.fx.drumroll");
 
         Server.setSurfaceTile(tilex, tiley, Tiles.decodeHeight(tile), Crops.getTileType(crop), Crops.encodeFieldData(true, 0, crop));
         final Skill farming = performer.getSkills().getSkillOrLearn(SkillList.FARMING);
@@ -173,15 +167,20 @@ public class SowPerformer extends TileAreaActionPerformer {
         performer.getCommunicator().sendNormalServerMessage("You sow the " + Crops.getCropName(crop) + ".");
         Server.getInstance().broadCastAction(performer.getName() + " sows some seeds.", performer, 5);
         seed.setWeight(seed.getWeightGrams() - seed.getTemplate().getWeightGrams(), true);
+        return true;
     }
 
     @Override
-    protected void doAnimation(Creature performer) {
+    public boolean actionStarted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         performer.playAnimation("drop", false);
+        final boolean isUnderWater = Terraforming.isCornerUnderWater(tilex, tiley, onSurface);
+        Item seed = findSeed(source, isUnderWater);
+        if (seed == null) return false;
+        return true;
     }
 
     @Override
-    protected float tileActionTime(Creature performer, Item source) {
+    public float getActionTime(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         return (float) ((130.0 - performer.getSkills().getSkillOrLearn(SkillList.FARMING).getKnowledge()) / 10f / Servers.localServer.getActionTimer());
     }
 }

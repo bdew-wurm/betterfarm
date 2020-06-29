@@ -13,10 +13,6 @@ import com.wurmonline.server.villages.VillageRole;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 
 public class TrellisActionPick extends TrellisActionBase {
-    public TrellisActionPick(TrellisType type) {
-        super(type);
-    }
-
     @Override
     public boolean canActOn(Creature performer, Item source, Item target, boolean sendMsg) {
         if (!super.canActOn(performer, source, target, sendMsg)) return false;
@@ -48,6 +44,9 @@ public class TrellisActionPick extends TrellisActionBase {
 
     @Override
     public boolean actionStarted(Creature performer, Item source, Item target) {
+        TrellisType type = TrellisType.fromItem(target);
+        if (type == null) return true;
+
         if (!performer.getInventory().mayCreatureInsertItem()) {
             performer.getCommunicator().sendNormalServerMessage("You decide to stop as your inventory is full.");
             return false;
@@ -72,6 +71,9 @@ public class TrellisActionPick extends TrellisActionBase {
 
     @Override
     public boolean actionCompleted(Creature performer, Item source, Item target) {
+        TrellisType type = TrellisType.fromItem(target);
+        if (type == null || type.productId <= 0) return true;
+
         Skill forestry = performer.getSkills().getSkillOrLearn(SkillList.FORESTRY);
         Skill sickle = performer.getSkills().getSkillOrLearn(SkillList.SICKLE);
 

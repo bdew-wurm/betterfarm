@@ -14,12 +14,6 @@ import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.api.IItemAction;
 
 public abstract class TrellisActionBase implements IItemAction {
-    final TrellisType type;
-
-    public TrellisActionBase(TrellisType type) {
-        this.type = type;
-    }
-
     @Override
     public boolean checkSkill(Creature performer, float needed) {
         return performer.getSkills().getSkillOrLearn(SkillList.GARDENING).getRealKnowledge() >= needed;
@@ -29,12 +23,10 @@ public abstract class TrellisActionBase implements IItemAction {
 
     @Override
     public boolean canStartOn(Creature performer, Item source, Item target) {
-        if (!performer.isPlayer()
-                || target.getTemplateId() != type.trellisId
-                || source == null || source.getTemplateId() != ItemList.sickle)
-            return false;
-
-        return target.getParentOrNull() == null;
+        return performer.isPlayer()
+                && TrellisType.fromItem(target) != null
+                && target.getParentOrNull() == null
+                && source != null && source.getTemplateId() == ItemList.sickle;
     }
 
     @Override
@@ -51,13 +43,15 @@ public abstract class TrellisActionBase implements IItemAction {
             return false;
         }
 
-        Village village = vt.getVillage();
-        if (village != null) {
-            VillageRole role = village.getRoleFor(performer);
-            if (role == null || !checkRole(role)) {
-                if (sendMsg)
-                    performer.getCommunicator().sendNormalServerMessage(String.format("You decide to skip the %s as it's against local laws.", target.getName().toLowerCase()));
-                return false;
+        if (performer.getPower() < 2) {
+            Village village = vt.getVillage();
+            if (village != null) {
+                VillageRole role = village.getRoleFor(performer);
+                if (role == null || !checkRole(role)) {
+                    if (sendMsg)
+                        performer.getCommunicator().sendNormalServerMessage(String.format("You decide to skip the %s as it's against local laws.", target.getName().toLowerCase()));
+                    return false;
+                }
             }
         }
 
