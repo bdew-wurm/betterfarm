@@ -167,7 +167,7 @@ public class AreaActionPerformer implements ActionPerformer {
             for (int x = tilex - radius; x <= tilex + radius; x++) {
                 for (int y = tiley - radius; y <= tiley + radius; y++) {
                     int t = mesh.getTile(x, y);
-                    if (handler.canActOn(performer, source, x, y, onSurface, t, false)) {
+                    if (handler.canActOn(performer, source, x, y, onSurface, t, true)) {
                         float time = handler.getActionTime(performer, source, x, y, onSurface, t);
                         items.add(new TileActionData.Entry(x, y, time));
                         totalTime += time;
