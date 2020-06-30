@@ -204,9 +204,8 @@ public class FieldActionHarvest extends FieldActionBase {
 
     @Override
     public boolean checkSkill(Creature performer, float needed) {
-        return false;
+        return performer.getSkills().getSkillOrLearn(SkillList.FARMING).getRealKnowledge() >= needed;
     }
-
     @Override
     public float getActionTime(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
         return Actions.getStandardActionTime(performer, performer.getSkills().getSkillOrLearn(SkillList.FARMING), source, 0.0D);
