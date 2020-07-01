@@ -47,7 +47,7 @@ public class TrellisActionPrune extends TrellisActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, Item target) {
+    public boolean actionCompleted(Creature performer, Item source, Item target, byte rarity) {
         Skill forestry = performer.getSkills().getSkillOrLearn(SkillList.FORESTRY);
         Skill sickle = performer.getSkills().getSkillOrLearn(SkillList.SICKLE);
 

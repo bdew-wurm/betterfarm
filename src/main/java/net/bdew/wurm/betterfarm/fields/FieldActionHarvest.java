@@ -81,7 +81,7 @@ public class FieldActionHarvest extends FieldActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, byte rarity) {
         int crop = Crops.getCropNumber(Tiles.decodeType(tile), Tiles.decodeData(tile));
         double difficulty = 0;
         int templateId;
@@ -105,7 +105,6 @@ public class FieldActionHarvest extends FieldActionBase {
             Methods.sendSound(performer, "sound.work.farming.harvest");
         }
 
-        byte rarity = performer.getRarity();
         if (rarity > 0)
             performer.playPersonalSound("sound.fx.drumroll");
 

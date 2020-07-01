@@ -70,7 +70,7 @@ public class TrellisActionPick extends TrellisActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, Item target) {
+    public boolean actionCompleted(Creature performer, Item source, Item target, byte rarity) {
         TrellisType type = TrellisType.fromItem(target);
         if (type == null || type.productId <= 0) return true;
 
@@ -83,7 +83,6 @@ public class TrellisActionPick extends TrellisActionBase {
             return true;
         }
 
-        byte rarity = performer.getRarity();
         if (rarity != 0) {
             performer.playPersonalSound("sound.fx.drumroll");
         }

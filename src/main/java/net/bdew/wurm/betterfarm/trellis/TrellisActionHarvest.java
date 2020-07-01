@@ -64,7 +64,7 @@ public class TrellisActionHarvest extends TrellisActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, Item target) {
+    public boolean actionCompleted(Creature performer, Item source, Item target, byte rarity) {
         TrellisType type = TrellisType.fromItem(target);
         if (type == null || type.productId <= 0) return true;
 
@@ -96,8 +96,6 @@ public class TrellisActionHarvest extends TrellisActionBase {
             performer.getCommunicator().sendNormalServerMessage("You would not be able to carry the harvest. You need to drop some things first.");
             return false;
         }
-
-        byte rarity = performer.getRarity();
 
         double power = 0;
         for (int i = 0; i < amount; i++)

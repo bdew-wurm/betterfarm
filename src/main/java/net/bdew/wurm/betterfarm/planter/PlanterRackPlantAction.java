@@ -59,7 +59,7 @@ public class PlanterRackPlantAction extends ContainerAction {
 
 
     @Override
-    protected boolean doActOnItem(Creature performer, Item source, Item item) {
+    protected boolean doActOnItem(Creature performer, Item source, Item item, byte rarity) {
         Item plantable = findPlantable(source);
         if (plantable == null) {
             performer.getCommunicator().sendNormalServerMessage(String.format("You stop planting as there are no more things to plant in the %s.", source.getName()));

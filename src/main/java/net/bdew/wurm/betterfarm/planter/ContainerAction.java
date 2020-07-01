@@ -34,7 +34,7 @@ public abstract class ContainerAction implements ModAction, ActionPerformer, Beh
 
     protected abstract boolean canActOnItem(Creature performer, Item item);
 
-    protected abstract boolean doActOnItem(Creature performer, Item source, Item item);
+    protected abstract boolean doActOnItem(Creature performer, Item source, Item item, byte rarity);
 
     protected abstract float baseActionTime(Creature performer, Item source);
 
@@ -100,14 +100,16 @@ public abstract class ContainerAction implements ModAction, ActionPerformer, Beh
             if (counter >= action.getNextTick()) {
                 for (Item sub : target.getItems()) {
                     if (canActOnItem(performer, sub)) {
-                        if (!doActOnItem(performer, source, sub)) {
+                        if (!doActOnItem(performer, source, sub, action.getRarity())) {
                             return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
                         }
-                        action.incNextTick(action.getData() * 0.0001f);
-                        if (shouldAbortAction(performer, source, target))
+                        if (shouldAbortAction(performer, source, target)) {
                             return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION, ActionPropagation.NO_SERVER_PROPAGATION);
-                        else
+                        } else {
+                            action.setRarity(performer.getRarity());
+                            action.incNextTick(action.getData() * 0.0001f);
                             return propagate(action, ActionPropagation.CONTINUE_ACTION);
+                        }
                     }
                 }
 

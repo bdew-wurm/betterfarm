@@ -61,7 +61,7 @@ public class PlanterRackPickAction extends ContainerAction {
     }
 
     @Override
-    protected boolean doActOnItem(Creature performer, Item source, Item item) {
+    protected boolean doActOnItem(Creature performer, Item source, Item item, byte rarity) {
         ItemTemplate growing = item.getRealTemplate();
         if (!performer.getInventory().mayCreatureInsertItem()) {
             performer.getCommunicator().sendNormalServerMessage("Your inventory is full. You would have no space to put whatever you pick.");
@@ -69,10 +69,9 @@ public class PlanterRackPickAction extends ContainerAction {
         }
 
         Skill gardening = performer.getSkills().getSkillOrLearn(SkillList.GARDENING);
-        byte rarity = performer.getRarity();
-        if (rarity != 0) {
+
+        if (rarity != 0)
             performer.playPersonalSound("sound.fx.drumroll");
-        }
 
         int age = item.getAuxData() & 127;
         int knowledge = (int) gardening.getKnowledge(0.0D);

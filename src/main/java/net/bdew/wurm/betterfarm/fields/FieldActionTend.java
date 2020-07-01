@@ -64,7 +64,7 @@ public class FieldActionTend extends FieldActionBase {
 
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, byte rarity) {
         byte data = Tiles.decodeData(tile);
         byte type = Tiles.decodeType(tile);
         int crop = Crops.getCropNumber(type, data);
@@ -78,7 +78,6 @@ public class FieldActionTend extends FieldActionBase {
 
         Methods.sendSound(performer, "sound.work.farming.rake");
         performer.getStatus().modifyStamina(-1000.0F);
-        byte rarity = performer.getRarity();
         if (rarity > 0)
             performer.playPersonalSound("sound.fx.drumroll");
 

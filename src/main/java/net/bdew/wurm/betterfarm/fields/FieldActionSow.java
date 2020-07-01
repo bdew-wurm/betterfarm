@@ -136,7 +136,7 @@ public class FieldActionSow extends FieldActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, byte rarity) {
         final boolean isUnderWater = Terraforming.isCornerUnderWater(tilex, tiley, onSurface);
         Item seed = findSeed(source, isUnderWater);
         if (seed == null) return false;
@@ -154,7 +154,6 @@ public class FieldActionSow extends FieldActionBase {
             return false;
         }
 
-        byte rarity = performer.getRarity();
         if (rarity > 0) performer.playPersonalSound("sound.fx.drumroll");
 
         Server.setSurfaceTile(tilex, tiley, Tiles.decodeHeight(tile), Crops.getTileType(crop), Crops.encodeFieldData(true, 0, crop));

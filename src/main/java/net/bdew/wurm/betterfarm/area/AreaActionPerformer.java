@@ -106,10 +106,11 @@ public class AreaActionPerformer implements ActionPerformer {
 
         if (counter >= action.getNextTick()) {
             if (data.current != null) {
-                if (!data.handler.actionCompleted(performer, source, data.current.item)) {
+                if (!data.handler.actionCompleted(performer, source, data.current.item, action.getRarity())) {
                     itemActionData.remove(action);
                     return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
                 }
+                if (data.targets.hasNext()) action.setRarity(performer.getRarity());
             }
             if (!data.targets.hasNext()) {
                 itemActionData.remove(action);
@@ -190,10 +191,11 @@ public class AreaActionPerformer implements ActionPerformer {
         if (counter >= action.getNextTick()) {
             if (data.current != null) {
                 int t = data.mesh.getTile(data.current.x, data.current.y);
-                if (!data.handler.actionCompleted(performer, source, data.current.x, data.current.y, onSurface, t)) {
+                if (!data.handler.actionCompleted(performer, source, data.current.x, data.current.y, onSurface, t, action.getRarity())) {
                     tileActionData.remove(action);
                     return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
                 }
+                if (data.targets.hasNext()) action.setRarity(performer.getRarity());
             }
             if (!data.targets.hasNext()) {
                 tileActionData.remove(action);

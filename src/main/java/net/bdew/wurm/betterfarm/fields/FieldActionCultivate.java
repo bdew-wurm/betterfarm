@@ -48,7 +48,7 @@ public class FieldActionCultivate extends FieldActionBase {
     }
 
     @Override
-    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+    public boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, byte rarity) {
         performer.getCommunicator().sendNormalServerMessage("You cultivate some soil and it's ready to sow now.");
         Server.getInstance().broadCastAction(performer.getName() + " cultivates some soil.", performer, 5);
         performer.getStatus().modifyStamina(-1000.0F);
