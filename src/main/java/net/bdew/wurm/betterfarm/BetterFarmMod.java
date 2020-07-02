@@ -17,9 +17,7 @@ import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,16 +41,13 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             logger.log(Level.INFO, msg);
     }
 
-    public static List<ActionDef> cultivateLevels;
-    public static List<ActionDef> sowLevels;
-    public static List<ActionDef> tendLevels;
-    public static List<ActionDef> harvestLevels;
-    public static List<ActionDef> replantLevels;
-    public static List<ActionDef> pickLevels;
-    public static List<ActionDef> pruneLevels;
+    public static List<ActionDef> cultivateLevels, sowLevels, tendLevels, harvestLevels, replantLevels, pickLevels, pruneLevels;
 
     private static float planterPlantSkill, planterPickSkill;
     private static String addPotables;
+
+    public static boolean allowMountedAreaActions = false;
+    public static Set<Short> allowWhenMountedIds = new HashSet<>();
 
     public static ApiImplementation apiHandler;
 
@@ -85,6 +80,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         planterPlantSkill = Float.parseFloat(properties.getProperty("planterPlantSkill", "-1"));
         planterPickSkill = Float.parseFloat(properties.getProperty("planterPickSkill", "-1"));
         addPotables = properties.getProperty("addPotables", "");
+        allowMountedAreaActions = Boolean.parseBoolean(properties.getProperty("allowMountedAreaActions", "false"));
     }
 
     @Override
@@ -143,6 +139,12 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             CtClass ctItem = classPool.getCtClass("com.wurmonline.server.items.Item");
             ctItem.getMethod("AddBulkItemToCrate", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;)Z").instrument(nameFixer);
             ctItem.getMethod("AddBulkItem", "(Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;)Z").instrument(nameFixer);
+
+            if (allowMountedAreaActions) {
+                CtClass ctActions = classPool.getCtClass("com.wurmonline.server.behaviours.Actions");
+                ctActions.getMethod("isActionAllowedOnVehicle", "(S)Z")
+                        .insertBefore("if (net.bdew.wurm.betterfarm.BetterFarmMod.allowWhenMountedIds.contains(new Short($1))) return true;");
+            }
 
         } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
