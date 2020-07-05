@@ -43,8 +43,6 @@ public class AreaActions {
     }
 
     public static BehaviourDispatcher.RequestParam tileBehaviourHook(BehaviourDispatcher.RequestParam result, Creature performer, long target, boolean onSurface, Item source) {
-        if (!onSurface) return result;
-
         List<ActionEntry> actions = result.getAvailableActions();
         List<ActionEntry> origActions = new ArrayList<>(actions);
 
