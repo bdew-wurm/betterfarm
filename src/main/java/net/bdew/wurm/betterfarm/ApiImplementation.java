@@ -29,7 +29,7 @@ public class ApiImplementation implements IBetterFarmAPI {
     public void addItemAreaHandler(int templateId, AreaActionType action, IItemAction handler) {
         try {
             ItemTemplate tpl = ItemTemplateFactory.getInstance().getTemplate(templateId);
-            BetterFarmMod.logInfo(String.format("Added item handler for %s (%s) - %s", tpl.getName(), action, handler.getClass().getName()));
+            BetterFarmMod.logDebug(String.format("Added item handler for %s (%s) - %s", tpl.getName(), action, handler.getClass().getName()));
             itemHandlers.computeIfAbsent(templateId, (t) -> new HashMap<>()).put(action, handler);
         } catch (NoSuchTemplateException e) {
             BetterFarmMod.logWarning(String.format("Attempt to add handler for non-existing template %d - %s", templateId, handler.getClass().getName()));
@@ -42,7 +42,7 @@ public class ApiImplementation implements IBetterFarmAPI {
         if (type == null) {
             BetterFarmMod.logWarning(String.format("Attempt to add handler for non-existing tile type %d - %s", tileType, handler.getClass().getName()));
         } else {
-            BetterFarmMod.logInfo(String.format("Added tile handler for %s (%s) - %s", type.getName(), action, handler.getClass().getName()));
+            BetterFarmMod.logDebug(String.format("Added tile handler for %s (%s) - %s", type.getName(), action, handler.getClass().getName()));
             tileHandlers.computeIfAbsent(tileType, (t) -> new HashMap<>()).put(action, handler);
         }
     }

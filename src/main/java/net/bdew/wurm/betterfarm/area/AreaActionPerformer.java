@@ -46,7 +46,7 @@ public class AreaActionPerformer implements ActionPerformer {
         ModActions.registerAction(actionEntry);
         ModActions.registerActionPerformer(this);
 
-        BetterFarmMod.logInfo(String.format("Registered action %d - %s (%dx%d)", getActionId(), type.name, 2 * radius + 1, 2 * radius + 1));
+        BetterFarmMod.logDebug(String.format("Registered action %d - %s (%dx%d)", getActionId(), type.name, 2 * radius + 1, 2 * radius + 1));
 
         if (BetterFarmMod.allowMountedAreaActions) BetterFarmMod.allowWhenMountedIds.add(actionEntry.getNumber());
     }

@@ -41,6 +41,11 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             logger.log(Level.INFO, msg);
     }
 
+    public static void logDebug(String msg) {
+        if (logger != null)
+            logger.log(Level.FINE, msg);
+    }
+
     public static List<ActionDef> cultivateLevels, sowLevels, tendLevels, harvestLevels, replantLevels, pickLevels, pruneLevels;
 
     private static float planterPlantSkill, planterPickSkill;
