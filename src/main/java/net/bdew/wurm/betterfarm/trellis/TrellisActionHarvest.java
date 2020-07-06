@@ -109,6 +109,8 @@ public class TrellisActionHarvest extends TrellisActionBase {
 
         ql = Math.max(1, Math.min(100.0f, (ql + source.getRarity()) * modifier));
 
+        performer.getStatus().modifyStamina(-1500 * amount);
+
         if (rarity > 0) {
             try {
                 performer.playPersonalSound("sound.fx.drumroll");

@@ -12,6 +12,7 @@ import net.bdew.wurm.betterfarm.fields.FieldActions;
 import net.bdew.wurm.betterfarm.planter.PlanterHooks;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPickAction;
 import net.bdew.wurm.betterfarm.planter.PlanterRackPlantAction;
+import net.bdew.wurm.betterfarm.trees.TreeActions;
 import net.bdew.wurm.betterfarm.trellis.TrellisActions;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
@@ -52,6 +53,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
     private static String addPotables;
 
     public static boolean allowMountedAreaActions = false;
+    public static boolean allowInfectedTrees = false;
     public static Set<Short> allowWhenMountedIds = new HashSet<>();
 
     public static ApiImplementation apiHandler;
@@ -86,6 +88,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         planterPickSkill = Float.parseFloat(properties.getProperty("planterPickSkill", "-1"));
         addPotables = properties.getProperty("addPotables", "");
         allowMountedAreaActions = Boolean.parseBoolean(properties.getProperty("allowMountedAreaActions", "false"));
+        allowInfectedTrees = Boolean.parseBoolean(properties.getProperty("allowInfectedTrees", "false"));
     }
 
     @Override
@@ -173,12 +176,16 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
     public void onServerStarted() {
         if (!addPotables.isEmpty())
             PlanterHooks.addPotables(addPotables);
+
         AreaActions.initActionLists();
+
         if (planterPlantSkill > 0)
             ModActions.registerAction(new PlanterRackPlantAction(planterPlantSkill));
         if (planterPickSkill > 0)
             ModActions.registerAction(new PlanterRackPickAction(planterPickSkill));
+
         TrellisActions.register();
         FieldActions.register();
+        TreeActions.register();
     }
 }
