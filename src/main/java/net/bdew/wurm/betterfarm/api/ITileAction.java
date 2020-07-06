@@ -15,4 +15,8 @@ public interface ITileAction {
     boolean actionStarted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile);
 
     boolean actionCompleted(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile, byte rarity);
+
+    default ActionEntryOverride getOverride(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
+        return null;
+    }
 }

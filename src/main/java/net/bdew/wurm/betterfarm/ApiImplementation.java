@@ -49,6 +49,6 @@ public class ApiImplementation implements IBetterFarmAPI {
 
     @Override
     public int apiVersion() {
-        return 2;
+        return 3;
     }
 }

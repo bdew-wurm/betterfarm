@@ -78,7 +78,8 @@ public class Utils {
                             list.add(p++, new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                         }
                     } else {
-                        list.add(p, available.get(0).actionEntry);
+                        AreaActionPerformer act = available.get(0);
+                        list.add(p, new ActionEntry(act.actionEntry.getNumber(), String.format("%s (%dx%x)", name, act.radius * 2 + 1, act.radius * 2 + 1), ""));
                     }
                     return;
                 }
@@ -100,7 +101,8 @@ public class Utils {
                     list.add(new ActionEntry(act.actionEntry.getNumber(), String.format("%dx%d Area", act.radius * 2 + 1, act.radius * 2 + 1), act.actionEntry.getVerbString()));
                 }
             } else {
-                list.add(available.get(0).actionEntry);
+                AreaActionPerformer act = available.get(0);
+                list.add(new ActionEntry(act.actionEntry.getNumber(), String.format("%s (%dx%x)", name, act.radius * 2 + 1, act.radius * 2 + 1), ""));
             }
         }
     }

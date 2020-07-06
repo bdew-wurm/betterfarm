@@ -11,6 +11,7 @@ import com.wurmonline.server.items.Item;
 import net.bdew.wurm.betterfarm.ActionDef;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
 import net.bdew.wurm.betterfarm.Utils;
+import net.bdew.wurm.betterfarm.api.ActionEntryOverride;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
 import net.bdew.wurm.betterfarm.api.IItemAction;
 import net.bdew.wurm.betterfarm.api.ITileAction;
@@ -56,11 +57,15 @@ public class AreaActions {
 
         handlers.forEach((type, act) -> {
             if (act.canStartOn(performer, source, x, y, onSurface, tileData)) {
-                Utils.addOrReplaceActions(actions, type.baseAction, type.name,
+                ActionEntryOverride override = act.getOverride(performer, source, x, y, onSurface, tileData);
+                short base = override == null ? type.baseAction : override.number;
+                String name = override == null ? type.name : override.name;
+                String goesUnder = override == null ? type.goesUnder : override.goesUnder;
+                Utils.addOrReplaceActions(actions, base, name,
                         actionPerformers.get(type).stream()
                                 .filter(a -> act.checkSkill(performer, a.skillLevel))
                                 .collect(Collectors.toList()),
-                        "Tile", type.goesUnder);
+                        "Tile", goesUnder);
             }
         });
 
@@ -80,11 +85,15 @@ public class AreaActions {
 
             handlers.forEach((type, act) -> {
                 if (act.canStartOn(performer, source, target)) {
-                    Utils.addOrReplaceActions(actions, type.baseAction, type.name,
+                    ActionEntryOverride override = act.getOverride(performer, source, target);
+                    short base = override == null ? type.baseAction : override.number;
+                    String name = override == null ? type.name : override.name;
+                    String goesUnder = override == null ? type.goesUnder : override.goesUnder;
+                    Utils.addOrReplaceActions(actions, base, name,
                             actionPerformers.get(type).stream()
                                     .filter(a -> act.checkSkill(performer, a.skillLevel))
                                     .collect(Collectors.toList()),
-                            "Single", type.goesUnder);
+                            "Single", goesUnder);
                 }
             });
 

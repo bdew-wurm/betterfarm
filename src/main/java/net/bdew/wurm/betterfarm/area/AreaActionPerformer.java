@@ -11,6 +11,7 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import net.bdew.wurm.betterfarm.BetterFarmMod;
+import net.bdew.wurm.betterfarm.api.ActionEntryOverride;
 import net.bdew.wurm.betterfarm.api.AreaActionType;
 import net.bdew.wurm.betterfarm.api.IItemAction;
 import net.bdew.wurm.betterfarm.api.ITileAction;
@@ -74,6 +75,9 @@ public class AreaActionPerformer implements ActionPerformer {
             if (!handler.checkSkill(performer, skillLevel) || !handler.canStartOn(performer, source, target))
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
 
+            ActionEntryOverride override = handler.getOverride(performer, source, target);
+            String verb = override == null ? type.verb : override.verb;
+
             LinkedList<ItemActionData.Entry> items = new LinkedList<>();
             int tilex = target.getTileX();
             int tiley = target.getTileY();
@@ -95,12 +99,12 @@ public class AreaActionPerformer implements ActionPerformer {
             }
 
             if (items.isEmpty()) {
-                performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s as you can't find any valid targets", type.verb));
+                performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s as you can't find any valid targets", verb));
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
             }
 
             action.setTimeLeft((int) totalTime);
-            performer.sendActionControl(type.verb, true, (int) totalTime);
+            performer.sendActionControl(verb, true, (int) totalTime);
             action.setNextTick(1);
 
             this.itemActionData.put(action, data = new ItemActionData(handler, items.iterator()));
@@ -159,6 +163,9 @@ public class AreaActionPerformer implements ActionPerformer {
             if (handler == null)
                 return propagate(action, ActionPropagation.SERVER_PROPAGATION, ActionPropagation.ACTION_PERFORMER_PROPAGATION);
 
+            ActionEntryOverride override = handler.getOverride(performer, source, tilex, tiley, onSurface, tile);
+            String verb = override == null ? type.verb : override.verb;
+
             if (!handler.checkSkill(performer, skillLevel) || !handler.canStartOn(performer, source, tilex, tiley, onSurface, tile))
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
 
@@ -179,12 +186,12 @@ public class AreaActionPerformer implements ActionPerformer {
             }
 
             if (totalTime <= 0) {
-                performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s as you can't find any valid targets", type.verb));
+                performer.getCommunicator().sendNormalServerMessage(String.format("You stop %s as you can't find any valid targets", verb));
                 return propagate(action, ActionPropagation.FINISH_ACTION, ActionPropagation.NO_SERVER_PROPAGATION, ActionPropagation.NO_ACTION_PERFORMER_PROPAGATION);
             }
 
             action.setTimeLeft((int) totalTime);
-            performer.sendActionControl(type.verb, true, (int) totalTime);
+            performer.sendActionControl(verb, true, (int) totalTime);
             action.setNextTick(1);
 
             this.tileActionData.put(action, data = new TileActionData(handler, mesh, items.iterator()));

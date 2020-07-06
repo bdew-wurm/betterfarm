@@ -15,4 +15,8 @@ public interface IItemAction {
     boolean actionStarted(Creature performer, Item source, Item target);
 
     boolean actionCompleted(Creature performer, Item source, Item target, byte rarity);
+
+    default ActionEntryOverride getOverride(Creature performer, Item source, Item target) {
+        return null;
+    }
 }
