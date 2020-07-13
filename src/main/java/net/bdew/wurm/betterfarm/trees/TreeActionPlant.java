@@ -17,16 +17,8 @@ import com.wurmonline.server.sounds.SoundPlayer;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
-import net.bdew.wurm.betterfarm.api.ActionEntryOverride;
 
 public class TreeActionPlant extends TreeActionBase {
-    static ActionEntryOverride override = new ActionEntryOverride(Actions.PLANT, "Plant", "planting", "Nature");
-
-    @Override
-    public ActionEntryOverride getOverride(Creature performer, Item source, int tilex, int tiley, boolean onSurface, int tile) {
-        return override;
-    }
-
     private Item findSprout(Item container) {
         for (Item item : container.getAllItems(true)) {
             if (item.getTemplateId() == ItemList.sprout &&

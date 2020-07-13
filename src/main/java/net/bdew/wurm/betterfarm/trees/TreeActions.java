@@ -20,7 +20,7 @@ public class TreeActions {
             }
         }
 
-        BetterFarmAPI.INSTANCE.addTileAreaHandler(Tiles.Tile.TILE_DIRT.id, AreaActionType.SOW, plant);
-        BetterFarmAPI.INSTANCE.addTileAreaHandler(Tiles.Tile.TILE_GRASS.id, AreaActionType.SOW, plant);
+        BetterFarmAPI.INSTANCE.addTileAreaHandler(Tiles.Tile.TILE_DIRT.id, AreaActionType.PLANT, plant);
+        BetterFarmAPI.INSTANCE.addTileAreaHandler(Tiles.Tile.TILE_GRASS.id, AreaActionType.PLANT, plant);
     }
 }

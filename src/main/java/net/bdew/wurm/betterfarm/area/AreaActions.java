@@ -120,5 +120,6 @@ public class AreaActions {
         initItemActions(AreaActionType.HARVEST_AND_REPLANT, BetterFarmMod.replantLevels);
         initItemActions(AreaActionType.PICK_SPROUT, BetterFarmMod.pickLevels);
         initItemActions(AreaActionType.PRUNE, BetterFarmMod.pruneLevels);
+        initItemActions(AreaActionType.PLANT, BetterFarmMod.plantLevels);
     }
 }

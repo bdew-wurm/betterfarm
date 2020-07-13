@@ -47,7 +47,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
             logger.log(Level.FINE, msg);
     }
 
-    public static List<ActionDef> cultivateLevels, sowLevels, tendLevels, harvestLevels, replantLevels, pickLevels, pruneLevels;
+    public static List<ActionDef> cultivateLevels, sowLevels, tendLevels, harvestLevels, replantLevels, pickLevels, pruneLevels, plantLevels;
 
     private static float planterPlantSkill, planterPickSkill;
     private static String addPotables;
@@ -84,6 +84,7 @@ public class BetterFarmMod implements WurmServerMod, Configurable, PreInitable, 
         replantLevels = parseDef(properties.getProperty("replant"));
         pickLevels = parseDef(properties.getProperty("pick"));
         pruneLevels = parseDef(properties.getProperty("prune"));
+        plantLevels = parseDef(properties.getProperty("plant"));
         planterPlantSkill = Float.parseFloat(properties.getProperty("planterPlantSkill", "-1"));
         planterPickSkill = Float.parseFloat(properties.getProperty("planterPickSkill", "-1"));
         addPotables = properties.getProperty("addPotables", "");
