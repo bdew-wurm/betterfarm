@@ -22,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 public class FieldActionTend extends FieldActionBase {
     @Override
     boolean checkRole(VillageRole role) {
-        return role.mayFarm();
+        return role.mayTendFields();
     }
 
     @Override
